@@ -94,11 +94,11 @@ class CollectionInheritanceTest < ActiveSupport::TestCase
   end
 
   def test_setting_collection_parser_resource_class
-    assert_equal PaginatedPost, PaginatedPost.where(page: 2).resource_class
+    assert_equal PaginatedPost, PaginatedPost.where(page: 2).all.resource_class
   end
 
   def test_setting_collection_parser_original_params
-    assert_equal({ page: 2 }, PaginatedPost.where(page: 2).original_params)
+    assert_equal({ page: 2 }, PaginatedPost.where(page: 2).all.original_params)
   end
 
   def test_custom_accessor
@@ -106,18 +106,18 @@ class CollectionInheritanceTest < ActiveSupport::TestCase
   end
 
   def test_first_or_create
-    post = PaginatedPost.where(title: "test").first_or_create
+    post = PaginatedPost.where(title: "test").all.first_or_create
     assert post.valid?
   end
 
   def test_first_or_initialize
-    post = PaginatedPost.where(title: "test").first_or_initialize
+    post = PaginatedPost.where(title: "test").all.first_or_initialize
     assert post.valid?
   end
 
   def test_where
-    posts = PaginatedPost.where(page: 2)
-    next_posts = posts.where(title: "Awesome")
+    posts = PaginatedPost.where(page: 2).all
+    next_posts = posts.where(title: "Awesome").all
     assert_kind_of PaginatedCollection, next_posts
   end
 end

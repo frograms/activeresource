@@ -50,7 +50,7 @@ class FinderTest < ActiveSupport::TestCase
   end
 
   def test_where
-    people = Person.where
+    people = Person.where.all
     assert_equal 2, people.size
     assert_kind_of Person, people.first
     assert_equal "Matz", people.first.name
@@ -58,14 +58,14 @@ class FinderTest < ActiveSupport::TestCase
   end
 
   def test_where_with_clauses
-    addresses = StreetAddress.where(person_id: 1)
+    addresses = StreetAddress.where(person_id: 1).all
     assert_equal 1, addresses.size
     assert_kind_of StreetAddress, addresses.first
   end
 
   def test_where_with_clause_in
     ActiveResource::HttpMock.respond_to { |m| m.get "/people.json?id%5B%5D=2", {}, @people_david }
-    people = Person.where(id: [2])
+    people = Person.where(id: [2]).all
     assert_equal 1, people.size
     assert_kind_of Person, people.first
     assert_equal "David", people.first.name

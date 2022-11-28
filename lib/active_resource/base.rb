@@ -19,6 +19,7 @@ require "active_resource/log_subscriber"
 require "active_resource/associations"
 require "active_resource/reflection"
 require "active_resource/threadsafe_attributes"
+require "active_resource/delegation"
 
 require "active_model/serializers/xml"
 
@@ -1019,9 +1020,13 @@ module ActiveResource
         find(:all, *args)
       end
 
+      def delegation_class
+        ActiveResource::Delegation
+      end
+
       def where(clauses = {})
         raise ArgumentError, "expected a clauses Hash, got #{clauses.inspect}" unless clauses.is_a? Hash
-        find(:all, params: clauses)
+        delegation_class.new(self, params: clauses)
       end
 
 
