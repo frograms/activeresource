@@ -46,6 +46,7 @@ class BaseLoadTest < ActiveSupport::TestCase
   end
 
   def setup
+    Object.send(:remove_const, :Comment) rescue nil
     @matz = { id: 1, name: "Matz" }
 
     @first_address = { address: { id: 1, street: "12345 Street" } }

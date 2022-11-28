@@ -24,6 +24,7 @@
 #++
 
 require "active_support"
+require "active_support/core_ext/hash/indifferent_access"
 require "active_model"
 require "active_resource/exceptions"
 require "active_resource/version"
@@ -45,3 +46,4 @@ module ActiveResource
 end
 
 require "active_resource/railtie" if defined?(Rails.application)
+require "active_resource/api_type_name_object_map"

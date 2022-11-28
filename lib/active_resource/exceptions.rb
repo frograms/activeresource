@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 module ActiveResource
-  class ConnectionError < StandardError # :nodoc:
+  class Error < StandardError
+  end
+
+  class ConnectionError < Error # :nodoc:
     attr_reader :response
 
     def initialize(response, message = nil)

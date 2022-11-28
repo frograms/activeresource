@@ -3,7 +3,6 @@
 require "active_support"
 require "active_support/core_ext/class/attribute_accessors"
 require "active_support/core_ext/class/attribute"
-require "active_support/core_ext/hash/indifferent_access"
 require "active_support/core_ext/kernel/reporting"
 require "active_support/core_ext/module/delegation"
 require "active_support/core_ext/module/aliasing"
@@ -394,23 +393,11 @@ module ActiveResource
       #
       def schema(&block)
         if block_given?
-          schema_definition = Schema.new
-          schema_definition.instance_eval(&block)
-
-          # skip out if we didn't define anything
-          return unless schema_definition.attrs.present?
-
-          @schema ||= {}.with_indifferent_access
-          @known_attributes ||= []
-
-          schema_definition.attrs.each do |k, v|
-            @schema[k] = v
-            @known_attributes << k
-          end
-
+          @schema = Schema.new(self)
+          @schema.instance_eval(&block)
           @schema
         else
-          @schema ||= nil
+          @schema ||= Schema.new(self)
         end
       end
 
@@ -432,18 +419,10 @@ module ActiveResource
       # strings.
       #
       def schema=(the_schema)
-        unless the_schema.present?
-          # purposefully nulling out the schema
-          @schema = nil
-          @known_attributes = []
-          return
-        end
-
+        the_schema = the_schema.attrs if the_schema.kind_of?(Schema)
+        the_schema = {} if the_schema.nil?
         raise ArgumentError, "Expected a hash" unless the_schema.kind_of? Hash
-
-        schema do
-          the_schema.each { |k, v| attribute(k, v) }
-        end
+        @schema = Schema.new(self, attrs: the_schema)
       end
 
       # Returns the list of known attributes for this resource, gathered
@@ -454,7 +433,7 @@ module ActiveResource
       # known attributes can be used with <tt>validates_presence_of</tt>
       # without a getter-method.
       def known_attributes
-        @known_attributes ||= []
+        schema.known_attributes
       end
 
       # Gets the URI of the REST resources to map for this class. The site variable is required for
@@ -1487,17 +1466,35 @@ module ActiveResource
             resource = nil
             value.map do |attrs|
               if attrs.is_a?(Hash)
-                resource ||= find_or_create_resource_for_collection(key)
+                resource ||= find_or_create_resource_for_collection(key, value: value)
                 resource.new(attrs, persisted)
               else
                 attrs.duplicable? ? attrs.dup : attrs
               end
             end
           when Hash
-            resource = find_or_create_resource_for(key)
-            resource.new(value, persisted)
+            if (blk = Schema.custom_attribute_type(self.class.schema[key.to_s]))
+              blk.call(key, value, persisted)
+            else
+              resource = find_or_create_resource_for(key, value: value)
+              if defined?(ActiveRecord) && resource < ActiveRecord::Base
+                attr = value.dup
+                attr.delete('__type')
+                ins = resource.new(attr)
+                ins.instance_variable_set(:@new_record, false) if persisted?
+                ins
+              elsif resource < ActiveResource::Base
+                resource.new(value, persisted)
+              else
+                raise TypeNotFound, "api_type_name: #{key}"
+              end
+            end
           else
-            value.duplicable? ? value.dup : value
+            if defined?(ActiveRecord) && value.is_a?(ActiveRecord::Base)
+              value
+            else
+              value.duplicable? ? value.dup : value
+            end
           end
       end
       self
@@ -1631,9 +1628,9 @@ module ActiveResource
       end
 
       # Tries to find a resource for a given collection name; if it fails, then the resource is created
-      def find_or_create_resource_for_collection(name)
+      def find_or_create_resource_for_collection(name, value: nil)
         return reflections[name.to_sym].klass if reflections.key?(name.to_sym)
-        find_or_create_resource_for(ActiveSupport::Inflector.singularize(name.to_s))
+        find_or_create_resource_for(ActiveSupport::Inflector.singularize(name.to_s), value: value)
       end
 
       # Tries to find a resource in a non empty list of nested modules
@@ -1652,9 +1649,16 @@ module ActiveResource
       end
 
       # Tries to find a resource for a given name; if it fails, then the resource is created
-      def find_or_create_resource_for(name)
-        return reflections[name.to_sym].klass if reflections.key?(name.to_sym)
-        resource_name = name.to_s.camelize
+      def find_or_create_resource_for(name, value: nil)
+        if reflections.key?(name.to_sym)
+          if value.is_a?(Hash) && value['__type'].present?
+            resource_name = value['__type']
+          else
+            return reflections[name.to_sym].klass
+          end
+        else
+          resource_name = name.to_s.camelize
+        end
 
         const_args = [resource_name, false]
 
@@ -1665,7 +1669,9 @@ module ActiveResource
           self.class.const_get(*const_args)
         else
           ancestors = self.class.name.to_s.split("::")
-          if ancestors.size > 1
+          if (object = ApiTypeNameObjectMap.find_object(resource_name))
+            object
+          elsif ancestors.size > 1
             find_or_create_resource_in_modules(resource_name, ancestors)
           else
             if Object.const_defined?(*const_args)

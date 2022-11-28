@@ -5,12 +5,17 @@ require "abstract_unit"
 require "fixtures/person"
 require "fixtures/beast"
 require "fixtures/customer"
+require "fixtures/post"
 
 
 class AssociationTest < ActiveSupport::TestCase
   def setup
+    Object.send(:remove_const, :Person) rescue nil
+    External.send(:remove_const, :Person) rescue nil if defined?(External)
+    load 'fixtures/person.rb'
     @klass = ActiveResource::Associations::Builder::Association
     @reflection = ActiveResource::Reflection::AssociationReflection.new :belongs_to, :customer, {}
+    @reflection_polymorphic = ActiveResource::Reflection::AssociationReflection.new :belongs_to, :customer, {polymorphic: true}
   end
 
 
@@ -53,8 +58,32 @@ class AssociationTest < ActiveSupport::TestCase
   end
 
   def test_belongs_to
-    External::Person.belongs_to(:Customer)
+    External::Person.belongs_to(:customer)
     assert_equal 1, External::Person.reflections.select { |name, reflection| reflection.macro.eql?(:belongs_to) }.count
+    assert External::Person.schema.attrs.key?(:customer_id)
+    person = External::Person.new
+    assert person.respond_to?(:customer_id)
+    assert person.respond_to?(:customer_id=)
+    customer = External::Person.new(id: 10)
+    assert person.respond_to?(:customer=)
+    person.customer = customer
+    assert person.instance_variable_defined?(:@customer)
+    assert person.respond_to?(:customer)
+    assert_equal customer, person.customer
+    assert_equal 10, person.customer_id
+  end
+
+  def test_belongs_to_polymorphic
+    External::Person.belongs_to(:customer, polymorphic: true)
+    assert External::Person.schema.attrs.key?(:customer_id)
+    assert External::Person.schema.attrs.key?(:customer_type)
+    person = External::Person.new
+    assert person.respond_to?(:customer_type)
+    assert person.respond_to?(:customer_type=)
+    customer = External::Person.new(id: 10)
+    person.customer = customer
+    assert_equal 10, person.customer_id
+    assert_equal 'External::Person', person.customer_type
   end
 
   def test_defines_belongs_to_finder_method_with_instance_variable_cache
@@ -63,6 +92,26 @@ class AssociationTest < ActiveSupport::TestCase
     person = Person.new
     assert_not person.instance_variable_defined?(:@customer)
     person.stubs(:customer_id).returns(2)
+    Customer.expects(:find).with(2).once()
+    2.times { person.customer }
+    assert person.instance_variable_defined?(:@customer)
+  end
+
+  def test_belongs_to_writer
+    Person.defines_belongs_to_finder_method(@reflection)
+    person = Person.new
+    customer = Person.new(id: 10)
+    person.customer = customer
+    assert_equal 10, person.customer_id
+  end
+
+  def test_defines_belongs_to_polymorphic_finder_method_with_instance_variable_cache
+    Person.defines_belongs_to_finder_method(@reflection_polymorphic)
+
+    person = Person.new
+    assert_not person.instance_variable_defined?(:@customer)
+    person.stubs(:customer_id).returns(2)
+    person.stubs(:customer_type).returns('Customer')
     Customer.expects(:find).with(2).once()
     2.times { person.customer }
     assert person.instance_variable_defined?(:@customer)

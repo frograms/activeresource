@@ -9,6 +9,8 @@ require "fixtures/customer"
 
 class ActiveResource::Associations::Builder::BelongsToTest < ActiveSupport::TestCase
   def setup
+    Object.send(:remove_const, :Person) rescue nil
+    load 'fixtures/person.rb'
     @klass = ActiveResource::Associations::Builder::BelongsTo
   end
 

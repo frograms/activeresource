@@ -147,6 +147,8 @@ class BaseErrorsTest < ActiveSupport::TestCase
 
   private
     def invalid_user_using_format(mime_type_reference)
+      Object.send(:remove_const, :Person) rescue nil
+      load 'fixtures/person.rb'
       previous_format = Person.format
       previous_schema = Person.schema
 
@@ -158,6 +160,6 @@ class BaseErrorsTest < ActiveSupport::TestCase
       yield
     ensure
       Person.format = previous_format
-      Person.schema = previous_schema
+      Person.schema = {}
     end
 end

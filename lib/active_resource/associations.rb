@@ -120,6 +120,10 @@ module ActiveResource::Associations
   # Defines the belongs_to association finder method
   def defines_belongs_to_finder_method(reflection)
     method_name = reflection.name
+    self.schema.attribute(reflection.foreign_key, :integer)
+    if reflection.options[:polymorphic]
+      self.schema.attribute(reflection.foreign_type, :string)
+    end
     ivar_name = :"@#{method_name}"
 
     if method_defined?(method_name)
@@ -130,10 +134,24 @@ module ActiveResource::Associations
     define_method(method_name) do
       if instance_variable_defined?(ivar_name)
         instance_variable_get(ivar_name)
-      elsif attributes.include?(method_name)
-        attributes[method_name]
       elsif association_id = send(reflection.foreign_key)
-        instance_variable_set(ivar_name, reflection.klass.find(association_id))
+        instance_variable_set(ivar_name, reflection.klass(resource: self).find(association_id))
+      end
+    end
+
+    if method_defined?("#{method_name}=")
+      remove_method("#{method_name}=")
+    end
+
+    if reflection.options[:polymorphic]
+      define_method("#{method_name}=") do |obj|
+        attributes[reflection.foreign_key] = obj.id
+        attributes[reflection.foreign_type] = ActiveResource::ApiTypeNameObjectMap.find_api_type_name(obj)
+      end
+    else
+      define_method("#{method_name}=") do |obj|
+        attributes[reflection.foreign_key] = obj.id
+        instance_variable_set(ivar_name, obj)
       end
     end
   end
@@ -148,7 +166,7 @@ module ActiveResource::Associations
       elsif attributes.include?(method_name)
         attributes[method_name]
       elsif !new_record?
-        instance_variable_set(ivar_name, reflection.klass.find(:all, params: { "#{self.class.element_name}_id": self.id }))
+        instance_variable_set(ivar_name, reflection.klass(resource: self).find(:all, params: { "#{self.class.element_name}_id": self.id }))
       else
         instance_variable_set(ivar_name, self.class.collection_parser.new)
       end
@@ -165,10 +183,10 @@ module ActiveResource::Associations
         instance_variable_get(ivar_name)
       elsif attributes.include?(method_name)
         attributes[method_name]
-      elsif reflection.klass.respond_to?(:singleton_name)
-        instance_variable_set(ivar_name, reflection.klass.find(params: { "#{self.class.element_name}_id": self.id }))
+      elsif reflection.klass(resource: self).respond_to?(:singleton_name)
+        instance_variable_set(ivar_name, reflection.klass(resource: self).find(params: { "#{self.class.element_name}_id": self.id }))
       else
-        instance_variable_set(ivar_name, reflection.klass.find(:one, from: "/#{self.class.collection_name}/#{self.id}/#{method_name}#{self.class.format_extension}"))
+        instance_variable_set(ivar_name, reflection.klass(resource: self).find(:one, from: "/#{self.class.collection_name}/#{self.id}/#{method_name}#{self.class.format_extension}"))
       end
     end
   end

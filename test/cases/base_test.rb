@@ -1527,6 +1527,7 @@ class BaseTest < ActiveSupport::TestCase
   end
 
   def test_parse_resources_with_has_many_makes_get_request_on_nested_route
+    load 'fixtures/comment.rb'
     Post.send(:has_many, :comments)
     post = Post.find(1)
     post.comments.each do |comment|
@@ -1600,6 +1601,7 @@ class BaseTest < ActiveSupport::TestCase
   end
 
   def test_namespacing
+    ActiveResource::ApiTypeNameObjectMap.set('Author', nil)
     sound = Asset::Sound.find(1)
     assert_equal "Asset::Sound::Author", sound.author.class.to_s
   end

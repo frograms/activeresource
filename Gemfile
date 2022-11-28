@@ -24,3 +24,8 @@ platform :mri do
     gem "ruby-prof"
   end
 end
+
+gem 'pry'
+gem 'pry-byebug'
+gem 'pry-stack_explorer'
+gem 'mocha'
