@@ -1659,7 +1659,7 @@ module ActiveResource
           if value.is_a?(Hash) && value['__type'].present?
             resource_name = value['__type']
           else
-            return reflections[name.to_sym].klass
+            return reflections[name.to_sym].klass(resource: self)
           end
         else
           resource_name = name.to_s.camelize
