@@ -1165,7 +1165,7 @@ module ActiveResource
         end
     end
 
-    attr_accessor :attributes # :nodoc:
+    attr_accessor :attributes, :extra # :nodoc:
     attr_accessor :prefix_options # :nodoc:
 
     # If no schema has been defined for the class (see
@@ -1198,7 +1198,18 @@ module ActiveResource
       @attributes     = {}.with_indifferent_access
       @prefix_options = {}
       @persisted = persisted
-      load(attributes, false, persisted)
+      @extra = {}
+
+      input = attributes.with_indifferent_access
+      el_name = self.class.element_name rescue nil
+      if el_name && input.key?(el_name)
+        attrs, @extra = input.partition{|k, v| k == el_name}
+        attrs = attrs[0][1]
+      else
+        attrs = input
+      end
+
+      load(attrs, false, persisted)
     end
 
     # Returns a \clone of the resource that hasn't been assigned an +id+ yet and
@@ -1457,12 +1468,6 @@ module ActiveResource
 
       attributes = attributes.to_hash
       @prefix_options, attributes = split_options(attributes)
-
-      if attributes.keys.size == 1
-        remove_root = self.class.element_name == attributes.keys.first.to_s
-      end
-
-      attributes = Formats.remove_root(attributes) if remove_root
 
       attributes.each do |key, value|
         @attributes[key.to_s] =
