@@ -1172,7 +1172,7 @@ module ActiveResource
     # <tt>ActiveResource::schema=</tt>), the default automatic schema is
     # generated from the current instance's attributes
     def schema
-      self.class.schema || self.attributes
+      self.class.schema
     end
 
     # This is a list of known attributes for this resource. Either

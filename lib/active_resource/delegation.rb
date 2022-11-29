@@ -1,32 +1,45 @@
 module ActiveResource
   class Delegation
+    class << self
+      def merge_options(base_opts, arg_opts)
+        params_opts = (base_opts[:params] || {}).merge(arg_opts[:params] || {})
+        opts = base_opts.except(:params).merge(arg_opts.except(:params))
+        opts[:params] = params_opts
+        opts
+      end
+    end
+
     def initialize(resource, options = {})
       @resource = resource
       @options = options
     end
 
+    def merge_options(opts)
+      self.class.merge_options(@options, opts)
+    end
+
     def all(*args)
-      options = @options.merge(args.extract_options!)
-      @resource.find(:all, *args, **options)
+      opts = args.extract_options!
+      @resource.find(:all, *args, **merge_options(opts))
     end
 
     def last(*args)
-      options = @options.merge(args.extract_options!)
-      @resource.find(:last, *args, **options)
+      opts = args.extract_options!
+      @resource.find(:last, *args, **merge_options(opts))
     end
 
     def first(*args)
-      options = @options.merge(args.extract_options!)
-      @resource.find(:first, *args, **options)
+      opts = args.extract_options!
+      @resource.find(:first, *args, **merge_options(opts))
     end
 
     def find(*arguments)
-      options = @options.merge(args.extract_options!)
-      @resource.find(*arguments, **options)
+      ops = arguments.extract_options!
+      @resource.find(*arguments, **merge_options(opts))
     end
 
     def where(clauses = {})
-      @options.update(clauses)
+      @options[:params] = (@options[:params] || {}).merge(clauses)
       self
     end
   end
