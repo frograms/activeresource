@@ -696,6 +696,8 @@ class BaseTest < ActiveSupport::TestCase
     assert_equal "value", apple.headers["key"]
     assert_equal "value2", apple.headers["key2"]
     assert_equal "value3", apple.headers["key3"]
+
+    assert_equal({'key' => 'value', 'key2' => 'value2', 'key3' => 'value3'}, apple.headers.to_h)
   end
 
   def test_header_inheritance_should_not_leak_upstream

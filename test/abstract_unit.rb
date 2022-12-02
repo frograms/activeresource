@@ -36,6 +36,7 @@ def setup_response
   @posts = [{ id: 1, title: "Hello World", body: "Lorem Ipsum" }, { id: 2, title: "Second Post", body: "Lorem Ipsum" }].to_json
   @comments = [{ id: 1, post_id: 1, content: "Interesting post" }, { id: 2, post_id: 1, content: "I agree" }].to_json
   @pets = [{ id: 1, name: "Max" }, { id: 2, name: "Daisy" }].to_json
+  @posts3 = (JSON.parse(@posts) + [{id: 3, title: "number 3", body: "sky is yellow"}]).to_json
 
   # - deep nested resource -
   # - Luis (Customer)
@@ -141,6 +142,8 @@ def setup_response
     mock.get    "/posts.json",                   {}, @posts
     mock.get    "/posts/1.json",                 {}, @post
     mock.get    "/posts/1/comments.json",        {}, @comments
+    mock.get    "/posts.json?person_id=10",      {}, @posts
+    mock.get    "/posts.json?project_id=9&project_type=Person", {}, @posts3
     # products
     mock.get "/products/1.json", {}, @product
     mock.get "/products/1/inventory.json", {}, @inventory

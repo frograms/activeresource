@@ -23,6 +23,12 @@ module ActiveResource
         self.reflections = self.reflections.merge(name => reflection)
         reflection
       end
+
+      def reflections_of(macro: nil)
+        ref = reflections.dup
+        ref.select{|k, v| v.macro == macro} if macro
+        ref
+      end
     end
 
 

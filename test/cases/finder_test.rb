@@ -2,6 +2,7 @@
 
 require "abstract_unit"
 require "fixtures/person"
+require "fixtures/post"
 require "fixtures/customer"
 require "fixtures/street_address"
 require "fixtures/beast"
@@ -61,6 +62,18 @@ class FinderTest < ActiveSupport::TestCase
     addresses = StreetAddress.where(person_id: 1).all
     assert_equal 1, addresses.size
     assert_kind_of StreetAddress, addresses.first
+  end
+
+  def test_where_with_belongs_to
+    posts = Post.where(person: Person.new(id: 10)).all
+    assert_equal 2, posts.size
+    assert_kind_of Post, posts.first
+  end
+
+  def test_where_with_belongs_to_polymorphic
+    pets = Post.where(project: Person.new(id: 9)).all
+    assert_equal 3, pets.size
+    assert_kind_of Post, pets.first
   end
 
   def test_where_with_clause_in

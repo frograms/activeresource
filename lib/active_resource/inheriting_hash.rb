@@ -11,5 +11,9 @@ module ActiveResource
     def [](key)
       super || @parent_hash[key]
     end
+
+    def to_h
+      @parent_hash.merge(self)
+    end
   end
 end

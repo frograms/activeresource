@@ -675,11 +675,13 @@ module ActiveResource
         end
       end
 
+      attr_writer :headers
+
       def headers
         self._headers ||= if superclass != Object
           InheritingHash.new(superclass.headers)
         else
-          {}
+          InheritingHash.new({})
         end
       end
 
@@ -693,6 +695,12 @@ module ActiveResource
 
       def collection_name
         @collection_name ||= ActiveSupport::Inflector.pluralize(element_name)
+      end
+
+      # act like ActiveRecord::Base
+      def base_class
+        return self if superclass == ActiveResource::Base
+        superclass
       end
 
       attr_writer :primary_key

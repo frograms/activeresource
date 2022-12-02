@@ -4,6 +4,8 @@ module ActiveResource
   class Error < StandardError
   end
 
+  class InvalidValue < Error; end
+
   class ConnectionError < Error # :nodoc:
     attr_reader :response
 
