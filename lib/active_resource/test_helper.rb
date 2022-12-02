@@ -17,6 +17,7 @@ module ActiveResource
           payload[:method] = method
           payload[:path] = path
           payload[:arguments] = arguments
+          payload[:action] = Rails.application.routes.recognize_path(path, method: method)[:action]
         end
         result = OpenStruct.new
         result.body = self.class.mock_body
@@ -27,7 +28,7 @@ module ActiveResource
     module Methods
       def resource_request_controller(payload)
         uri = URI.parse(payload[:request_uri])
-        send(payload[:method], :index, params: Rack::Utils.parse_nested_query(uri.query))
+        send(payload[:method], payload[:action], params: Rack::Utils.parse_nested_query(uri.query))
       end
 
       def set_resource_mock_body(body)
