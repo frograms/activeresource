@@ -37,17 +37,8 @@ module ActiveResource
     def build_options(opts)
       merged = self.class.merge_options(@options, opts)
       params = merged.delete(:params).with_indifferent_access
-      @resource.reflections_of(macro: :belongs_to).each do |name, assoc|
-        if params.key?(name) && params[name]
-          if params[name].respond_to?(:id)
-            obj = params.delete(name)
-            params[assoc.foreign_key] = obj.id
-            params[assoc.foreign_type] = obj.model_name.name if assoc.options[:polymorphic]
-          else
-            raise InvalidValue, "attribute must have id method: #{@resource.name}##{name}"
-          end
-        end
-      end
+      @resource.build_belongs_to_params!(params)
+      @resource.build_has_many_params!(params)
       params[:__includes__] = @options[:__includes__] if @options[:__includes__].present?
       params[:__extra__] = @options[:__extra__] if @options[:__extra__].present?
       merged[:params] = params

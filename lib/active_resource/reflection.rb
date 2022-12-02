@@ -19,23 +19,25 @@ module ActiveResource
 
     module ClassMethods
       def create_reflection(macro, name, options)
-        reflection = AssociationReflection.new(macro, name, options)
+        reflection = AssociationReflection.new(self, macro, name, options)
         self.reflections = self.reflections.merge(name => reflection)
         reflection
       end
 
       def reflections_of(macro: nil)
-        ref = reflections.dup
-        ref.select{|k, v| v.macro == macro} if macro
+        ref = reflections
+        ref = ref.select{|k, v| v.macro == macro} if macro
         ref
       end
     end
 
 
     class AssociationReflection
-      def initialize(macro, name, options)
-        @macro, @name, @options = macro, name, options
+      def initialize(resource_class, macro, name, options)
+        @resource_class, @macro, @name, @options = resource_class, macro, name, options
       end
+
+      attr_reader :resource_class
 
       # Returns the name of the macro.
       #
@@ -89,11 +91,31 @@ module ActiveResource
         end
 
         def derive_foreign_key
-          options[:foreign_key] ? options[:foreign_key].to_s : "#{name.to_s.downcase}_id"
+          return options[:foreign_key] if options[:foreign_key]
+          case macro
+          when :has_many
+            if options[:as]
+              "#{options[:as]}_id"
+            else
+              "#{resource_class.model_name.element}_id"
+            end
+          else
+            "#{name.to_s.downcase}_id"
+          end
         end
 
         def derive_foreign_type
-          options[:foreign_type] ? options[:foreign_type].to_s : "#{name.to_s.downcase}_type"
+          return options[:foreign_type] if options[:foreign_type]
+          case macro
+          when :has_many
+            if options[:as]
+              "#{options[:as]}_type"
+            else
+              "#{resource_class.model_name.element}_type"
+            end
+          else
+            "#{name.to_s.downcase}_type"
+          end
         end
     end
   end

@@ -2,6 +2,8 @@
 
 module ActiveResource::Associations::Builder
   class HasMany < Association
+    self.valid_options += [:foreign_key, :foreign_type, :as, :params_key]
+
     self.macro = :has_many
 
     def build

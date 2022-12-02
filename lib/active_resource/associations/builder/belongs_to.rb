@@ -2,7 +2,7 @@
 
 module ActiveResource::Associations::Builder
   class BelongsTo < Association
-    self.valid_options += [:foreign_key, :polymorphic]
+    self.valid_options += [:foreign_key, :foreign_type, :polymorphic]
 
     self.macro = :belongs_to
 

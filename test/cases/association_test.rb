@@ -14,8 +14,8 @@ class AssociationTest < ActiveSupport::TestCase
     External.send(:remove_const, :Person) rescue nil if defined?(External)
     load 'fixtures/person.rb'
     @klass = ActiveResource::Associations::Builder::Association
-    @reflection = ActiveResource::Reflection::AssociationReflection.new :belongs_to, :customer, {}
-    @reflection_polymorphic = ActiveResource::Reflection::AssociationReflection.new :belongs_to, :customer, {polymorphic: true}
+    @reflection = ActiveResource::Reflection::AssociationReflection.new Person, :belongs_to, :customer, {}
+    @reflection_polymorphic = ActiveResource::Reflection::AssociationReflection.new Person, :belongs_to, :customer, {polymorphic: true}
   end
 
 

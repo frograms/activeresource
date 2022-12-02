@@ -156,6 +156,16 @@ module ActiveResource::Associations
     end
   end
 
+  def build_belongs_to_params!(params)
+    reflections_of(macro: :belongs_to).each do |name, assoc|
+      if params.key?(name) && params[name]
+        obj = params.delete(name)
+        params[assoc.foreign_key] = obj.send(obj.class.primary_key)
+        params[assoc.foreign_type] = obj.class.base_class.name if assoc.options[:polymorphic]
+      end
+    end
+  end
+
   def defines_has_many_finder_method(reflection)
     method_name = reflection.name
     ivar_name = :"@#{method_name}"
@@ -166,9 +176,33 @@ module ActiveResource::Associations
       elsif attributes.include?(method_name)
         attributes[method_name]
       elsif !new_record?
-        instance_variable_set(ivar_name, reflection.klass(resource: self).find(:all, params: { "#{self.class.element_name}_id": self.id }))
+        klass = reflection.klass(resource: self)
+        if klass < ActiveResource::Base
+          instance_variable_set(ivar_name, klass.find(:all, params: { "#{self.class.element_name}_id": self.id }))
+        else
+          # assume ActiveRecord::Base
+          instance_variable_set(ivar_name, klass.where("#{self.class.element_name}_id": self.id))
+        end
       else
         instance_variable_set(ivar_name, self.class.collection_parser.new)
+      end
+    end
+  end
+
+  def build_has_many_params!(params)
+    reflections_of(macro: :has_many).each do |name, assoc|
+      if params.key?(name) && params[name]
+        param_values = Array.wrap(params.delete(name))
+        if assoc.options[:params_key]
+          params[assoc.options[:params_key]] = param_values.map do |v|
+            {type: v.class.base_class.name, id: v.send(v.class.primary_key)}
+          end
+        else
+          if (invalid = param_values.find{|v| !v.respond_to?(assoc.foreign_key)})
+            raise ActiveResource::InvalidValue, "associated object must have foreign_key method: #{invalid.class.name} don't have `#{assoc.foreign_key}` method"
+          end
+          params[primary_key] = param_values.map(&assoc.foreign_key.to_sym)
+        end
       end
     end
   end
