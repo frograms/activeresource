@@ -9,7 +9,11 @@ ActiveResource::Base.instance_eval do
       integer amount_attr
     end
     define_method(name) do
-      Money.new(send("#{name}_cents"), send("#{name}_currency"))
+      Money.new(send(amount_attr), send(currency_attr))
+    end
+    define_method(:"#{name}=") do |money|
+      send(:"#{currency_attr}=", money.currency.iso_code)
+      send(:"#{amount_attr}=", money.cents)
     end
   end
 end

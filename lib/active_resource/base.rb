@@ -1478,42 +1478,45 @@ module ActiveResource
       @prefix_options, attributes = split_options(attributes)
 
       attributes.each do |key, value|
-        @attributes[key.to_s] =
-          case value
-          when Array
-            resource = nil
-            value.map do |attrs|
-              if attrs.is_a?(Hash)
-                resource ||= find_or_create_resource_for_collection(key, value: value)
-                resource.new(attrs, persisted)
-              else
-                attrs.duplicable? ? attrs.dup : attrs
-              end
-            end
-          when Hash
-            if (blk = Schema.custom_attribute_type(self.class.schema[key.to_s]))
-              blk.call(key, value, persisted)
+        case value
+        when Array
+          resource = nil
+          @attributes[key.to_s] = value.map do |attrs|
+            if attrs.is_a?(Hash)
+              resource ||= find_or_create_resource_for_collection(key, value: value)
+              resource.new(attrs, persisted)
             else
-              resource = find_or_create_resource_for(key, value: value)
-              if defined?(ActiveRecord) && resource < ActiveRecord::Base
-                attr = value.dup
-                attr.delete('__type')
-                ins = resource.new(attr)
-                ins.instance_variable_set(:@new_record, false) if persisted?
-                ins
-              elsif resource < ActiveResource::Base
-                resource.new(value, persisted)
-              else
-                raise TypeNotFound, "api_type_name: #{key}"
-              end
-            end
-          else
-            if defined?(ActiveRecord) && value.is_a?(ActiveRecord::Base)
-              value
-            else
-              value.duplicable? ? value.dup : value
+              attrs.duplicable? ? attrs.dup : attrs
             end
           end
+        when Hash
+          if (blk = Schema.custom_attribute_type(self.class.schema[key.to_s]))
+            @attributes[key.to_s] = blk.call(key, value, persisted)
+          else
+            resource = find_or_create_resource_for(key, value: value)
+            if defined?(ActiveRecord) && resource < ActiveRecord::Base
+              attr = value.dup
+              attr.delete('__type')
+              ins = resource.new(attr)
+              ins.instance_variable_set(:@new_record, false) if persisted?
+              @attributes[key.to_s] = ins
+            elsif resource < ActiveResource::Base
+              @attributes[key.to_s] = resource.new(value, persisted)
+            else
+              raise TypeNotFound, "api_type_name: #{key}"
+            end
+          end
+        else
+          if reflections[key.to_sym]
+            self.send(:"#{key}=", value)
+          elsif respond_to?(:"#{key}=")
+            self.send(:"#{key}=", value)
+          elsif defined?(ActiveRecord) && value.is_a?(ActiveRecord::Base)
+            @attributes[key.to_s] = value
+          else
+            @attributes[key.to_s] = value.duplicable? ? value.dup : value
+          end
+        end
       end
       self
     end

@@ -21,7 +21,11 @@ module ActiveResource
 
       def decode(json)
         return nil if json.nil?
-        Formats.remove_root(ActiveSupport::JSON.decode(json))
+        Formats.remove_root(decode_as_it_is(json))
+      end
+
+      def decode_as_it_is(json)
+        ActiveSupport::JSON.decode(json)
       end
     end
   end

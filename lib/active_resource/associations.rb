@@ -147,6 +147,7 @@ module ActiveResource::Associations
       define_method("#{method_name}=") do |obj|
         attributes[reflection.foreign_key] = obj.id
         attributes[reflection.foreign_type] = ActiveResource::ApiTypeNameObjectMap.find_api_type_name(obj)
+        instance_variable_set(ivar_name, obj)
       end
     else
       define_method("#{method_name}=") do |obj|

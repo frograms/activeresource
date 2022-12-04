@@ -16,7 +16,13 @@ module ActiveResource
           payload[:connection]  = http
           payload[:method] = method
           payload[:path] = path
-          payload[:arguments] = arguments
+          case method
+          when :get, :delete, :head
+            payload[:headers] = arguments[0]
+          else
+            payload[:body] = format.decode_as_it_is(arguments[0])
+            payload[:headers] = arguments[1]
+          end
         end
         result = OpenStruct.new
         result.body = self.class.mock_body
@@ -25,9 +31,14 @@ module ActiveResource
     end
 
     module Methods
-      def resource_request_controller(payload)
+      def resource_request_controller(payload, action: :index)
         uri = URI.parse(payload[:request_uri])
-        send(payload[:method], :index, params: Rack::Utils.parse_nested_query(uri.query))
+        if payload[:body]
+          params = payload[:body]
+        else
+          params = Rack::Utils.parse_nested_query(uri.query)
+        end
+        send(payload[:method], action, params: params)
       end
 
       def set_resource_mock_body(body)

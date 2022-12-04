@@ -20,7 +20,11 @@ module ActiveResource
       end
 
       def decode(xml)
-        Formats.remove_root(Hash.from_xml(xml))
+        Formats.remove_root(decode_as_it_is(xml))
+      end
+
+      def decode_as_it_is(xml)
+        Hash.from_xml(xml)
       end
     end
   end
