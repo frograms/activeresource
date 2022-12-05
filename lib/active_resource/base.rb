@@ -1496,10 +1496,14 @@ module ActiveResource
             resource = find_or_create_resource_for(key, value: value)
             if defined?(ActiveRecord) && resource < ActiveRecord::Base
               attr = value.dup
-              attr.delete('__type')
+              attr.delete('__type__')
               ins = resource.new(attr)
               ins.instance_variable_set(:@new_record, false) if persisted?
-              @attributes[key.to_s] = ins
+              if respond_to?(:"#{key}=")
+                send(:"#{key}=", ins)
+              else
+                @attributes[key.to_s] = ins
+              end
             elsif resource < ActiveResource::Base
               @attributes[key.to_s] = resource.new(value, persisted)
             else
@@ -1672,8 +1676,8 @@ module ActiveResource
       # Tries to find a resource for a given name; if it fails, then the resource is created
       def find_or_create_resource_for(name, value: nil)
         if reflections.key?(name.to_sym)
-          if value.is_a?(Hash) && value['__type'].present?
-            resource_name = value['__type']
+          if value.is_a?(Hash) && value['__type__'].present?
+            resource_name = value['__type__']
           else
             return reflections[name.to_sym].klass(resource: self)
           end

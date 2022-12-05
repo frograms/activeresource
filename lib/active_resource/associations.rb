@@ -160,9 +160,19 @@ module ActiveResource::Associations
   def build_belongs_to_params!(params)
     reflections_of(macro: :belongs_to).each do |name, assoc|
       if params.key?(name) && params[name]
-        obj = params.delete(name)
-        params[assoc.foreign_key] = obj.send(obj.class.primary_key)
-        params[assoc.foreign_type] = obj.class.base_class.name if assoc.options[:polymorphic]
+        value = params.delete(name)
+        if assoc.options[:polymorphic]
+          value = Array.wrap(value)
+          if value.map{|v| v.class.base_class.name}.uniq.one?
+            params[assoc.foreign_type] = value.first.class.base_class.name
+            params[assoc.foreign_key] = value.map{|v| v.send(v.class.primary_key)}
+          else
+            params[name] = value.map{|v| {type: v.class.base_class.name, id: v.send(v.class.primary_key)}}
+          end
+        else
+          val = Array.wrap(value).map{|v| v.send(v.class.primary_key)}
+          params[assoc.foreign_key] = val
+        end
       end
     end
   end

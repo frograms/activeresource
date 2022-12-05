@@ -2,6 +2,7 @@
 
 require "rubygems" unless defined? Gem
 require "bundler/setup"
+Bundler.require
 
 lib = File.expand_path("#{File.dirname(__FILE__)}/../lib")
 $:.unshift(lib) unless $:.include?("lib") || $:.include?(lib)
@@ -142,8 +143,8 @@ def setup_response
     mock.get    "/posts.json",                   {}, @posts
     mock.get    "/posts/1.json",                 {}, @post
     mock.get    "/posts/1/comments.json",        {}, @comments
-    mock.get    "/posts.json?person_id=10",      {}, @posts
-    mock.get    "/posts.json?project_id=9&project_type=Person", {}, @posts3
+    mock.get    "/posts.json?person_id%5B%5D=10",      {}, @posts
+    mock.get    "/posts.json?project_id%5B%5D=9&project_type=Person", {}, @posts3
     # products
     mock.get "/products/1.json", {}, @product
     mock.get "/products/1/inventory.json", {}, @inventory
