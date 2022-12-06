@@ -20,7 +20,8 @@ module ActiveResource
           when :get, :delete, :head
             payload[:headers] = arguments[0]
           else
-            payload[:body] = format.decode_as_it_is(arguments[0])
+            payload[:body_s] = arguments[0]
+            payload[:body] = format.decode_as_it_is(arguments[0]) if arguments[0].present?
             payload[:headers] = arguments[1]
           end
         end
@@ -38,7 +39,11 @@ module ActiveResource
         else
           params = Rack::Utils.parse_nested_query(uri.query)
         end
-        send(payload[:method], action, params: params)
+        if block_given?
+          yield(params)
+        else
+          send(payload[:method], action, params: params)
+        end
       end
 
       def set_resource_mock_body(body)

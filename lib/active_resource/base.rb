@@ -790,11 +790,12 @@ module ActiveResource
       #   Comment.element_path(1, {:post_id => 5}, {:active => 1})
       #   # => /posts/5/comments/1.json?active=1
       #
-      def element_path(id, prefix_options = {}, query_options = nil)
+      def element_path(id, prefix_options = {}, query_options = nil, options = {})
         check_prefix_options(prefix_options)
-
         prefix_options, query_options = split_options(prefix_options) if query_options.nil?
-        "#{prefix(prefix_options)}#{collection_name}/#{URI.encode_www_form_component(id.to_s)}#{format_extension}#{query_string(query_options)}"
+        base_path = "#{prefix(prefix_options)}#{collection_name}/#{URI.encode_www_form_component(id.to_s)}"
+        base_path = "#{base_path}/#{options[:action]}" if options[:action].present?
+        "#{base_path}#{format_extension}#{query_string(query_options)}"
       end
 
       # Gets the element url for the given ID in +id+. If the +query_options+ parameter is omitted, Rails
@@ -823,8 +824,8 @@ module ActiveResource
       #   Comment.element_url(1, {:post_id => 5}, {:active => 1})
       #   # => https://37s.sunrise.com/posts/5/comments/1.json?active=1
       #
-      def element_url(id, prefix_options = {}, query_options = nil)
-        URI.join(site, element_path(id, prefix_options, query_options)).to_s
+      def element_url(id, prefix_options = {}, query_options = nil, options = {})
+        URI.join(site, element_path(id, prefix_options, query_options, options)).to_s
       end
 
       # Gets the new element path for REST resources.
@@ -1208,7 +1209,7 @@ module ActiveResource
       @persisted = persisted
       @extra = {}
 
-      input = attributes.with_indifferent_access
+      input = (attributes || {}).with_indifferent_access
       el_name = self.class.element_name rescue nil
       if el_name && input.key?(el_name)
         attrs, @extra = input.partition{|k, v| k == el_name}
@@ -1630,12 +1631,12 @@ module ActiveResource
         response["Location"][/\/([^\/]*?)(\.\w+)?$/, 1] if response["Location"]
       end
 
-      def element_path(options = nil)
-        self.class.element_path(to_param, options || prefix_options)
+      def element_path(prefix_options = nil, query_options = nil, options = {})
+        self.class.element_path(to_param, prefix_options || self.prefix_options, query_options, options)
       end
 
-      def element_url(options = nil)
-        self.class.element_url(to_param, options || prefix_options)
+      def element_url(prefix_options = nil, query_options = nil, options = {})
+        self.class.element_url(to_param, prefix_options || self.prefix_options, query_options, options)
       end
 
       def new_element_path
