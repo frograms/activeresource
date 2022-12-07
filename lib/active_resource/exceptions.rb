@@ -8,16 +8,30 @@ module ActiveResource
   class NotPersisted < Error; end
 
   class ConnectionError < Error # :nodoc:
-    attr_reader :response
+    attr_reader :response, :response_body
     attr_reader :request
 
     def initialize(response, message = nil, request_args: [])
       @response = response
       @message  = message
-      @request = {}
+      @request = {}.with_indifferent_access
       @request[:method] = request_args[0]
       @request[:path] = request_args[1]
       @request[:arguments] = request_args[2..-1] || []
+      if @request[:path]
+        @request[:format] = @request[:path].scan(/.*\.(json|xml)$/).flatten[0]
+      end
+      if decoder && @response.body.present?
+        @response_body = decoder.decode_as_it_is(@response.body)
+        @response_body = @response_body.with_indifferent_access if @response_body.is_a?(Hash)
+      end
+    end
+
+    def decoder
+      case @request[:format]
+      when 'json' then ActiveResource::Formats::JsonFormat
+      when 'xml' then ActiveResource::Formats::XmlFormat
+      end
     end
 
     def to_s
@@ -34,6 +48,8 @@ module ActiveResource
       @info = []
       @info << "Response code = #{response.code}" if response.respond_to?(:code)
       @info << "Response message = #{response.message}" if response.respond_to?(:message)
+      @info << "Response body message = #{response_body[:message]}" if response_body[:message]
+      @info << "Error message = #{@message}" if @message
       @info << "Request method = #{request[:method]}" if request[:method]
       @info << "Request path = #{request[:path]}" if request[:path]
       @info << "Request args = #{request[:arguments]}" if request[:arguments]

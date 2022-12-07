@@ -17,6 +17,7 @@ module ActiveResource
       @options[:params] ||= {}
       @options[:__includes__] ||= []
       @options[:__extra__] ||= []
+      @options[:__order_by__] ||= {}.with_indifferent_access
     end
 
     def where(clauses = {})
@@ -34,6 +35,22 @@ module ActiveResource
       self
     end
 
+    def order(*args, **kwargs)
+      args.each do |k|
+        @options[:__order_by__][k] = 'ASC'
+      end
+      kwargs.each_pair do |k, v|
+        v ||= 'ASC'
+        v = v.to_s.upcase
+        case v
+        when 'NONE' then @options[:__order_by__].delete(k)
+        when 'DESC', 'ASC' then @options[:__order_by__][k] = v
+        else raise "undefined sorting option: #{v}"
+        end
+      end
+      self
+    end
+
     def build_options(opts)
       merged = self.class.merge_options(@options, opts)
       params = merged.delete(:params).with_indifferent_access
@@ -41,6 +58,7 @@ module ActiveResource
       @resource.build_has_many_params!(params)
       params[:__includes__] = @options[:__includes__] if @options[:__includes__].present?
       params[:__extra__] = @options[:__extra__] if @options[:__extra__].present?
+      params[:__order_by__] = @options[:__order_by__] if @options[:__order_by__].present?
       merged[:params] = params
       merged
     end
