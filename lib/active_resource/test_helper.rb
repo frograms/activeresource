@@ -32,6 +32,12 @@ module ActiveResource
     end
 
     module Methods
+      def resource_request_subscribe
+        ActiveSupport::Notifications.subscribe('request.active_resource') do |name, start_time, end_time, _, payload|
+          yield(payload)
+        end
+      end
+
       def resource_request_controller(payload, action: :index)
         uri = URI.parse(payload[:request_uri])
         if payload[:body]
