@@ -122,7 +122,7 @@ module ActiveResource
           payload[:request_uri] = "#{site.scheme}://#{site.host}:#{site.port}#{path}"
           payload[:result]      = http.send(method, path, *arguments)
         end
-        handle_response(result)
+        handle_response(result, request_args: [method, path, *arguments])
       rescue Timeout::Error => e
         raise TimeoutError.new(e.message)
       rescue OpenSSL::SSL::SSLError => e
@@ -130,38 +130,38 @@ module ActiveResource
       end
 
       # Handles response and error codes from the remote service.
-      def handle_response(response)
+      def handle_response(response, request_args: [])
         case response.code.to_i
         when 301, 302, 303, 307
-          raise(Redirection.new(response))
+          raise(Redirection.new(response, request_args: request_args))
         when 200...400
           response
         when 400
-          raise(BadRequest.new(response))
+          raise(BadRequest.new(response, request_args: request_args))
         when 401
-          raise(UnauthorizedAccess.new(response))
+          raise(UnauthorizedAccess.new(response, request_args: request_args))
         when 403
-          raise(ForbiddenAccess.new(response))
+          raise(ForbiddenAccess.new(response, request_args: request_args))
         when 404
-          raise(ResourceNotFound.new(response))
+          raise(ResourceNotFound.new(response, request_args: request_args))
         when 405
-          raise(MethodNotAllowed.new(response))
+          raise(MethodNotAllowed.new(response, request_args: request_args))
         when 409
-          raise(ResourceConflict.new(response))
+          raise(ResourceConflict.new(response, request_args: request_args))
         when 410
-          raise(ResourceGone.new(response))
+          raise(ResourceGone.new(response, request_args: request_args))
         when 412
-          raise(PreconditionFailed.new(response))
+          raise(PreconditionFailed.new(response, request_args: request_args))
         when 422
-          raise(ResourceInvalid.new(response))
+          raise(ResourceInvalid.new(response, request_args: request_args))
         when 429
-          raise(TooManyRequests.new(response))
+          raise(TooManyRequests.new(response, request_args: request_args))
         when 401...500
-          raise(ClientError.new(response))
+          raise(ClientError.new(response, request_args: request_args))
         when 500...600
-          raise(ServerError.new(response))
+          raise(ServerError.new(response, request_args: request_args))
         else
-          raise(ConnectionError.new(response, "Unknown response code: #{response.code}"))
+          raise(ConnectionError.new(response, "Unknown response code: #{response.code}", request_args: request_args))
         end
       end
 

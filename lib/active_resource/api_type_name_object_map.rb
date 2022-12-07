@@ -38,7 +38,7 @@ module ActiveResource
 
       def find_object(api_type_name)
         if object_map.key?(api_type_name)
-          return object_map[api_type_name]
+          return object_map[api_type_name]&.constantize
         end
         begin
           _object_fallback.call(api_type_name)

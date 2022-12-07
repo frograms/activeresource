@@ -145,13 +145,13 @@ module ActiveResource::Associations
 
     if reflection.options[:polymorphic]
       define_method("#{method_name}=") do |obj|
-        attributes[reflection.foreign_key] = obj.id
-        attributes[reflection.foreign_type] = ActiveResource::ApiTypeNameObjectMap.find_api_type_name(obj)
+        attributes[reflection.foreign_key] = obj&.id
+        attributes[reflection.foreign_type] = obj ? ActiveResource::ApiTypeNameObjectMap.find_api_type_name(obj) : nil
         instance_variable_set(ivar_name, obj)
       end
     else
       define_method("#{method_name}=") do |obj|
-        attributes[reflection.foreign_key] = obj.id
+        attributes[reflection.foreign_key] = obj&.id
         instance_variable_set(ivar_name, obj)
       end
     end

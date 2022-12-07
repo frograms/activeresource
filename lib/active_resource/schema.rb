@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'active_resource/custom_type_config'
 
 module ActiveResource # :nodoc:
   class Schema # :nodoc:
@@ -7,7 +8,7 @@ module ActiveResource # :nodoc:
 
     # attributes can be known to be one of these types. They are easy to
     # cast to/from.
-    KNOWN_ATTRIBUTE_TYPES = %w( string text integer float decimal datetime timestamp time date binary boolean )
+    KNOWN_ATTRIBUTE_TYPES = %w( string text integer float decimal datetime timestamp time date binary boolean serialize )
 
     @custom_attribute_types = {}
     

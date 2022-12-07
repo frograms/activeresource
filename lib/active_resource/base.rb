@@ -394,7 +394,7 @@ module ActiveResource
       #
       def schema(&block)
         if block_given?
-          @schema = Schema.new(self)
+          @schema ||= Schema.new(self)
           @schema.instance_eval(&block)
           @schema
         else
@@ -792,6 +792,7 @@ module ActiveResource
       #
       def element_path(id, prefix_options = {}, query_options = nil, options = {})
         check_prefix_options(prefix_options)
+        raise InvalidValue, "blank id" if id.blank?
         prefix_options, query_options = split_options(prefix_options) if query_options.nil?
         base_path = "#{prefix(prefix_options)}#{collection_name}/#{URI.encode_www_form_component(id.to_s)}"
         base_path = "#{base_path}/#{options[:action]}" if options[:action].present?
@@ -1491,8 +1492,12 @@ module ActiveResource
             end
           end
         when Hash
-          if (blk = Schema.custom_attribute_type(self.class.schema[key.to_s]))
-            @attributes[key.to_s] = blk.call(key, value, persisted)
+          if (type = schema.attrs[key])
+            if (type_config = Schema.custom_attribute_type(type))
+              type_config.load_hash(@attributes, key, value, persisted)
+            elsif type == 'serialize'
+              @attributes[key.to_s] = value
+            end
           else
             resource = find_or_create_resource_for(key, value: value)
             if defined?(ActiveRecord) && resource < ActiveRecord::Base
@@ -1506,7 +1511,12 @@ module ActiveResource
                 @attributes[key.to_s] = ins
               end
             elsif resource < ActiveResource::Base
-              @attributes[key.to_s] = resource.new(value, persisted)
+              ins = resource.new(value, persisted)
+              if respond_to?(:"#{key}=")
+                send(:"#{key}=", ins)
+              else
+                @attributes[key.to_s] = ins
+              end
             else
               raise TypeNotFound, "api_type_name: #{key}"
             end
@@ -1593,6 +1603,14 @@ module ActiveResource
       end
     end
 
+    def read_attribute(attr_name)
+      attributes[attr_name]
+    end
+
+    def write_attribute(attr_name, value)
+      attributes[attr_name] = value
+    end
+
     protected
       def connection(refresh = false)
         self.class.connection(refresh)
@@ -1632,10 +1650,12 @@ module ActiveResource
       end
 
       def element_path(prefix_options = nil, query_options = nil, options = {})
+        raise NotPersisted, "#{self.inspect}" unless persisted?
         self.class.element_path(to_param, prefix_options || self.prefix_options, query_options, options)
       end
 
       def element_url(prefix_options = nil, query_options = nil, options = {})
+        raise NotPersisted, "#{self.inspect}" unless persisted?
         self.class.element_url(to_param, prefix_options || self.prefix_options, query_options, options)
       end
 

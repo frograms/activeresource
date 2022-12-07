@@ -5,13 +5,19 @@ module ActiveResource
   end
 
   class InvalidValue < Error; end
+  class NotPersisted < Error; end
 
   class ConnectionError < Error # :nodoc:
     attr_reader :response
+    attr_reader :request
 
-    def initialize(response, message = nil)
+    def initialize(response, message = nil, request_args: [])
       @response = response
       @message  = message
+      @request = {}
+      @request[:method] = request_args[0]
+      @request[:path] = request_args[1]
+      @request[:arguments] = request_args[2..-1] || []
     end
 
     def to_s
@@ -21,6 +27,17 @@ module ActiveResource
       message << "  Response code = #{response.code}." if response.respond_to?(:code)
       message << "  Response message = #{response.message}." if response.respond_to?(:message)
       message
+    end
+
+    def info
+      return @info if @info
+      @info = []
+      @info << "Response code = #{response.code}" if response.respond_to?(:code)
+      @info << "Response message = #{response.message}" if response.respond_to?(:message)
+      @info << "Request method = #{request[:method]}" if request[:method]
+      @info << "Request path = #{request[:path]}" if request[:path]
+      @info << "Request args = #{request[:arguments]}" if request[:arguments]
+      @info
     end
   end
 
