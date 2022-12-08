@@ -40,12 +40,9 @@ module ActiveResource
           else
             params = Rack::Utils.parse_nested_query(uri.query)
           end
-          if block_given?
-            yield(params)
-          else
-            send(payload[:method], action, params: params)
-          end
+          yield(payload[:method], params, payload)
         end
+        ActiveSupport::Notifications.unsubscribe('request.active_resource')
       end
 
       def set_resource_mock_body(body)
