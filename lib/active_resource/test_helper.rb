@@ -32,23 +32,19 @@ module ActiveResource
     end
 
     module Methods
-      def resource_request_subscribe
+      def resource_request_controller(action: :index)
         ActiveSupport::Notifications.subscribe('request.active_resource') do |name, start_time, end_time, _, payload|
-          yield(payload)
-        end
-      end
-
-      def resource_request_controller(payload, action: :index)
-        uri = URI.parse(payload[:request_uri])
-        if payload[:body]
-          params = payload[:body]
-        else
-          params = Rack::Utils.parse_nested_query(uri.query)
-        end
-        if block_given?
-          yield(params)
-        else
-          send(payload[:method], action, params: params)
+          uri = URI.parse(payload[:request_uri])
+          if payload[:body]
+            params = payload[:body]
+          else
+            params = Rack::Utils.parse_nested_query(uri.query)
+          end
+          if block_given?
+            yield(params)
+          else
+            send(payload[:method], action, params: params)
+          end
         end
       end
 
