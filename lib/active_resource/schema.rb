@@ -44,25 +44,25 @@ module ActiveResource # :nodoc:
       string: TypeConfig.new(:string),
       text: TypeConfig.new(:text),
       integer: TypeConfig.new(:integer) do |attributes, key, value|
-        attributes[key] = Integer(value)
+        attributes[key] = value ? Integer(value) : nil
       end,
       float: TypeConfig.new(:float) do |attributes, key, value|
-        attributes[key] = Float(value)
+        attributes[key] = value ? Float(value) : nil
       end,
       decimal: TypeConfig.new(:decimal) do |attributes, key, value|
-        attributes[key] = Integer(value)
+        attributes[key] = value ? Integer(value) : nil
       end,
       datetime: TypeConfig.new(:datetime) do |attributes, key, value|
-        attributes[key] = Time.zone.parse(value)
+        attributes[key] = value ? Time.zone.parse(value) : nil
       end,
       timestamp: TypeConfig.new(:timestamp) do |attributes, key, value|
-        attributes[key] = Time.zone.parse(value)
+        attributes[key] = value ? Time.zone.parse(value) : nil
       end,
       time: TypeConfig.new(:time) do |attributes, key, value|
-        attributes[key] = Time.zone.parse(value)
+        attributes[key] = value ? Time.zone.parse(value) : nil
       end,
       date: TypeConfig.new(:date) do |attributes, key, value|
-        attributes[key] = Date.parse(value)
+        attributes[key] = value ? Date.parse(value) : nil
       end,
       binary: TypeConfig.new(:binary),
       boolean: TypeConfig.new(:boolean),
