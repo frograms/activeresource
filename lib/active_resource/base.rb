@@ -992,6 +992,8 @@ module ActiveResource
       def find(*arguments)
         scope   = arguments.slice!(0)
         options = arguments.slice!(0) || {}
+        params = Delegation.build_extra_params(self, options, options[:params])
+        options[:params] = params
 
         case scope
         when :all
@@ -1089,6 +1091,7 @@ module ActiveResource
         def find_every(options)
           params = options[:params]
           prefix_options, query_options = split_options(params)
+          query_options.delete(:__extra__) if query_options[:__extra__].blank?
 
           response =
             case from = options[:from]
@@ -1158,7 +1161,8 @@ module ActiveResource
 
         # Builds the query string for the request.
         def query_string(options)
-          "?#{options.to_query}" unless options.nil? || options.empty?
+          q = options&.to_query
+          q.present? ? "?#{q}" : nil
         end
 
         # split an option hash into two hashes, one containing the prefix options,
@@ -1215,6 +1219,7 @@ module ActiveResource
       if el_name && input.key?(el_name)
         attrs, @extra = input.partition{|k, v| k == el_name}
         attrs = attrs[0][1]
+        @extra = Hash[@extra].with_indifferent_access
       else
         attrs = input
       end
@@ -1480,6 +1485,11 @@ module ActiveResource
       @prefix_options, attributes = split_options(attributes)
 
       attributes.each do |key, value|
+        if (extra_config = schema.extra[key])
+          extra_config.load(@extra, key, value)
+          next
+        end
+
         case value
         when Array
           resource = nil
@@ -1493,8 +1503,8 @@ module ActiveResource
           end
         when Hash
           if (type = schema.attrs[key])
-            if (type_config = Schema.custom_attribute_type(type))
-              type_config.load_hash(@attributes, key, value, persisted)
+            if (type_config = Schema.custom_attribute_types[type])
+              type_config.load(@attributes, key, value)
             elsif type == 'serialize'
               @attributes[key.to_s] = value
             end

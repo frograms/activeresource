@@ -32,7 +32,7 @@ module ActiveResource
     end
 
     module Methods
-      def resource_request_controller(action: :index)
+      def resource_request_controller
         ActiveSupport::Notifications.subscribe('request.active_resource') do |name, start_time, end_time, _, payload|
           uri = URI.parse(payload[:request_uri])
           if payload[:body]
@@ -41,8 +41,8 @@ module ActiveResource
             params = Rack::Utils.parse_nested_query(uri.query)
           end
           yield(payload[:method], params, payload)
+          ActiveSupport::Notifications.unsubscribe('request.active_resource')
         end
-        ActiveSupport::Notifications.unsubscribe('request.active_resource')
       end
 
       def set_resource_mock_body(body)

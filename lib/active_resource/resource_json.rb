@@ -2,6 +2,44 @@ module ActiveResource
   module ResourceJson
     extend ActiveSupport::Concern
 
+    mattr_accessor :methods_prefix, default: '_r_'.freeze
+    mattr_accessor :rescue_method, default: (
+      proc do |obj, mtd, original_method, exception|
+        if defined?(Rails)
+          ResourceJson.default_rescue_method(obj, mtd, original_method, exception)
+        end
+      end
+    )
+
+    class << self
+      def default_rescue_method(obj, method_name, original_method, exception)
+        if exception.is_a?(NoMethodError) && obj.respond_to?(method_name)
+          Rails.logger.info("resource_json `method: #{method_name}` rejected. if you want allow, alias as `#{obj.resource_methods_prefix}#{method_name}` in `class: #{obj.class.name}`")
+          return
+        end
+        msg = "resource_json rescue `method: #{original_method.inspect}` for `class: #{obj.class.name}`"
+        msg += ", `id: #{obj.id}`" if obj.respond_to?(:id)
+        msg += "\nexception: #{exception.message}\n#{exception.backtrace.join("\n")}"
+        Rails.logger.error(msg)
+      end
+    end
+
+    class_methods do
+      def resource_methods_prefix
+        ResourceJson.methods_prefix
+      end
+
+      def allow_resource_json(*mtds)
+        mtds.each do |mtd|
+          alias_method :"#{resource_methods_prefix}#{mtd}", mtd
+        end
+      end
+    end
+
+    def resource_methods_prefix
+      self.class.resource_methods_prefix
+    end
+
     def resource_json(options = nil)
       root = if options && options.key?(:root)
         options[:root]
@@ -19,19 +57,38 @@ module ActiveResource
     end
 
     def resource_hash(options = nil)
+      options ||= {}
+      methods = options.delete(:methods) || []
       hash = serializable_hash(options)
       if self.class._has_attribute?(self.class.inheritance_column)
         hash.update(serializable_attributes([self.class.inheritance_column]))
       end
+
+      methods.each do |mtd|
+        case mtd
+        when Symbol, String
+          m_name = mtd
+          prefixed = :"#{resource_methods_prefix}#{mtd}"
+          begin
+            hash[m_name.to_s] = send(prefixed)
+          rescue => e
+            ResourceJson.rescue_method.call(self, m_name, mtd, e)
+          end
+        when Array
+          if mtd[0].present?
+            mtd_args = mtd.dup
+            m_name = mtd_args.shift
+            prefixed = :"#{resource_methods_prefix}#{m_name}"
+            opts = mtd_args.extract_options!
+            begin
+              hash[m_name.to_s] = send(prefixed, *mtd_args, **opts)
+            rescue => e
+              ResourceJson.rescue_method.call(self, m_name, mtd, e)
+            end
+          end
+        end
+      end
       hash
-    end
-
-    def resource_extra_methods
-      []
-    end
-
-    def resource_filter_extra(*args)
-      resource_extra_methods & args.reject(&blank?).map(&:to_sym)
     end
   end
 end
@@ -120,9 +177,9 @@ class Hash
   def resource_json(options = nil) # :nodoc:
     # create a subset of the hash by applying :only or :except
     subset = if options
-      if attrs = options[:only]
+      if (attrs = options[:only])
         slice(*Array(attrs))
-      elsif attrs = options[:except]
+      elsif (attrs = options[:except])
         except(*Array(attrs))
       else
         self

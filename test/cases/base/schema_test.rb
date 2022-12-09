@@ -25,8 +25,8 @@ class SchemaTest < ActiveSupport::TestCase
   ####
 
   test "schema on a new model should be empty" do
-    assert_equal({'id' => 'integer'}, Person.schema.attrs)
-    assert_equal({'id' => 'integer'}, Person.new.schema.attrs)
+    assert_equal({'id' => 'integer'}, Person.schema.attrs_type_name)
+    assert_equal({'id' => 'integer'}, Person.new.schema.attrs_type_name)
   end
 
   test "schema should only accept a hash" do
@@ -45,7 +45,7 @@ class SchemaTest < ActiveSupport::TestCase
       "thetime" => "time", "thedate" => "date", "mydatetime" => "datetime" }
 
     assert_nothing_raised { Person.schema = new_schema }
-    assert_equal new_schema.merge('id' => 'integer'), Person.schema.attrs
+    assert_equal new_schema.merge('id' => 'integer'), Person.schema.attrs_type_name
   end
 
   test "schema should accept a hash with simple values" do
@@ -56,7 +56,7 @@ class SchemaTest < ActiveSupport::TestCase
       "thetime" => "time", "thedate" => "date", "mydatetime" => "datetime" }
 
     assert_nothing_raised { Person.schema = new_schema }
-    assert_equal new_schema.merge({'id' => 'integer'}), Person.schema.attrs
+    assert_equal new_schema.merge({'id' => 'integer'}), Person.schema.attrs_type_name
   end
 
   test "schema should accept all known attribute types as values" do
@@ -83,10 +83,10 @@ class SchemaTest < ActiveSupport::TestCase
       "thetime" => "time", "thedate" => "date", "mydatetime" => "datetime" }
 
     assert_nothing_raised { Person.schema = new_schema }
-    assert_equal new_schema.merge('id' => 'integer'), Person.schema.attrs # sanity check
+    assert_equal new_schema.merge('id' => 'integer'), Person.schema.attrs_type_name # sanity check
 
     assert_nothing_raised { Person.schema = nil }
-    assert_equal({'id' => 'integer'}, Person.schema.attrs)
+    assert_equal({'id' => 'integer'}, Person.schema.attrs_type_name)
   end
 
   test "schema should be with indifferent access" do
@@ -142,8 +142,8 @@ class SchemaTest < ActiveSupport::TestCase
 
     assert_nothing_raised {
       Person.schema = new_schema
-      assert_equal new_schema.merge('id' => 'integer'), Person.schema.attrs, "should have saved the schema on the class"
-      assert_equal new_schema.merge('id' => 'integer'), Person.new.schema.attrs, "should have made the schema available to every instance"
+      assert_equal new_schema.merge('id' => 'integer'), Person.schema.attrs_type_name, "should have saved the schema on the class"
+      assert_equal new_schema.merge('id' => 'integer'), Person.new.schema.attrs_type_name, "should have made the schema available to every instance"
     }
   end
 
@@ -188,7 +188,7 @@ class SchemaTest < ActiveSupport::TestCase
         attribute :foo, :string
       end
       assert_respond_to s, :attrs, "should return attributes in theory"
-      assert_equal({ "foo" => "string", 'id' => 'integer' }, s.attrs, "should return attributes in practice")
+      assert_equal({ "foo" => "string", 'id' => 'integer' }, s.attrs_type_name, "should return attributes in practice")
     end
   end
 
@@ -200,7 +200,7 @@ class SchemaTest < ActiveSupport::TestCase
         attribute("foo", "string")
       end
       assert s.attrs.has_key?("foo"), "should have saved the attribute name"
-      assert_equal "string", s.attrs["foo"], "should have saved the attribute type"
+      assert_equal "string", s.attrs["foo"].name.to_s, "should have saved the attribute type"
     end
   end
 
@@ -213,7 +213,7 @@ class SchemaTest < ActiveSupport::TestCase
       end
 
       assert s.attrs.has_key?("foo"), "should have saved the attribute name as a string"
-      assert_equal "integer", s.attrs["foo"], "should have saved the attribute type as a string"
+      assert_equal "integer", s.attrs["foo"].name.to_s, "should have saved the attribute type as a string"
     end
   end
 
@@ -226,7 +226,7 @@ class SchemaTest < ActiveSupport::TestCase
           attribute("foo#{ix}", the_type)
         end
         assert s.attrs.has_key?("foo#{ix}"), "should have saved the attribute name"
-        assert_equal the_type.to_s, s.attrs["foo#{ix}"], "should have saved the attribute type of: #{the_type}"
+        assert_equal the_type.to_s, s.attrs["foo#{ix}"].name.to_s, "should have saved the attribute type of: #{the_type}"
       end
     end
   end
@@ -257,7 +257,7 @@ class SchemaTest < ActiveSupport::TestCase
         send(the_type, "foo#{ix}")
       end
       assert s.attrs.has_key?("foo#{ix}"), "should now have saved the attribute name"
-      assert_equal the_type.to_s, s.attrs["foo#{ix}"], "should have saved the attribute type of: #{the_type}"
+      assert_equal the_type.to_s, s.attrs_type_name["foo#{ix}"], "should have saved the attribute type of: #{the_type}"
     end
   end
 
@@ -270,7 +270,7 @@ class SchemaTest < ActiveSupport::TestCase
     end
     names.each do |the_name|
       assert s.attrs.has_key?(the_name), "should now have saved the attribute name: #{the_name}"
-      assert_equal "string", s.attrs[the_name], "should have saved the attribute as a string"
+      assert_equal "string", s.attrs[the_name].name.to_s, "should have saved the attribute as a string"
     end
   end
 
