@@ -59,9 +59,20 @@ module ActiveResource
     def resource_hash(options = nil)
       options ||= {}
       methods = options.delete(:methods) || []
+      includes = options.delete(:include) || []
       hash = serializable_hash(options)
+
       if self.class._has_attribute?(self.class.inheritance_column)
         hash.update(serializable_attributes([self.class.inheritance_column]))
+        hash[self.class.inheritance_column] ||= self.class.name
+      end
+
+      resource_json_add_includes(include: includes) do |association, records, opts|
+        hash[association.to_s] = if records.respond_to?(:to_ary)
+          records.to_ary.map { |a| a.resource_hash(opts) }
+        else
+          records.resource_hash(opts)
+        end
       end
 
       methods.each do |mtd|
@@ -89,6 +100,21 @@ module ActiveResource
         end
       end
       hash
+    end
+
+    private
+    def resource_json_add_includes(options = {}) # :nodoc:
+      return unless (includes = options[:include])
+
+      unless includes.is_a?(Hash)
+        includes = Hash[Array(includes).flat_map { |n| n.is_a?(Hash) ? n.to_a : [[n, {}]] }]
+      end
+
+      includes.each do |association, opts|
+        if (records = send(association))
+          yield association, records, opts
+        end
+      end
     end
   end
 end
