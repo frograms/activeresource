@@ -46,12 +46,24 @@ module ActiveResource # :nodoc:
       integer: TypeConfig.new(:integer) do |attributes, key, value|
         attributes[key] = Integer(value)
       end,
-      float: TypeConfig.new(:float),
-      decimal: TypeConfig.new(:decimal),
-      datetime: TypeConfig.new(:datetime),
-      timestamp: TypeConfig.new(:timestamp),
-      time: TypeConfig.new(:time),
-      date: TypeConfig.new(:date),
+      float: TypeConfig.new(:float) do |attributes, key, value|
+        attributes[key] = Float(value)
+      end,
+      decimal: TypeConfig.new(:decimal) do |attributes, key, value|
+        attributes[key] = Integer(value)
+      end,
+      datetime: TypeConfig.new(:datetime) do |attributes, key, value|
+        attributes[key] = Time.zone.parse(value)
+      end,
+      timestamp: TypeConfig.new(:timestamp) do |attributes, key, value|
+        attributes[key] = Time.zone.parse(value)
+      end,
+      time: TypeConfig.new(:time) do |attributes, key, value|
+        attributes[key] = Time.zone.parse(value)
+      end,
+      date: TypeConfig.new(:date) do |attributes, key, value|
+        attributes[key] = Date.parse(value)
+      end,
       binary: TypeConfig.new(:binary),
       boolean: TypeConfig.new(:boolean),
       serialize: TypeConfig.new(:serialize)

@@ -1490,6 +1490,11 @@ module ActiveResource
           next
         end
 
+        if (schema_config = schema.attrs[key])
+          schema_config.load(@attributes, key, value)
+          next
+        end
+
         case value
         when Array
           resource = nil
@@ -1502,34 +1507,26 @@ module ActiveResource
             end
           end
         when Hash
-          if (type = schema.attrs[key])
-            if (type_config = Schema.custom_attribute_types[type])
-              type_config.load(@attributes, key, value)
-            elsif type == 'serialize'
-              @attributes[key.to_s] = value
+          resource = find_or_create_resource_for(key, value: value)
+          if defined?(ActiveRecord) && resource < ActiveRecord::Base
+            attr = value.dup
+            attr.delete('__type__')
+            ins = resource.new(attr)
+            ins.instance_variable_set(:@new_record, false) if persisted?
+            if respond_to?(:"#{key}=")
+              send(:"#{key}=", ins)
+            else
+              @attributes[key.to_s] = ins
+            end
+          elsif resource < ActiveResource::Base
+            ins = resource.new(value, persisted)
+            if respond_to?(:"#{key}=")
+              send(:"#{key}=", ins)
+            else
+              @attributes[key.to_s] = ins
             end
           else
-            resource = find_or_create_resource_for(key, value: value)
-            if defined?(ActiveRecord) && resource < ActiveRecord::Base
-              attr = value.dup
-              attr.delete('__type__')
-              ins = resource.new(attr)
-              ins.instance_variable_set(:@new_record, false) if persisted?
-              if respond_to?(:"#{key}=")
-                send(:"#{key}=", ins)
-              else
-                @attributes[key.to_s] = ins
-              end
-            elsif resource < ActiveResource::Base
-              ins = resource.new(value, persisted)
-              if respond_to?(:"#{key}=")
-                send(:"#{key}=", ins)
-              else
-                @attributes[key.to_s] = ins
-              end
-            else
-              raise TypeNotFound, "api_type_name: #{key}"
-            end
+            raise TypeNotFound, "api_type_name: #{key}"
           end
         else
           if reflections[key.to_sym]
