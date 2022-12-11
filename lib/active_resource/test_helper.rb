@@ -40,6 +40,7 @@ module ActiveResource
           else
             params = Rack::Utils.parse_nested_query(uri.query)
           end
+          request.headers.merge(payload[:headers])
           yield(payload[:method], params, payload)
           ActiveSupport::Notifications.unsubscribe('request.active_resource')
         end
