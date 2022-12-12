@@ -1215,7 +1215,7 @@ module ActiveResource
       @attributes     = {}.with_indifferent_access
       @prefix_options = {}
       @persisted = persisted
-      @extra = {}
+      @extra = {}.with_indifferent_access
 
       input = (attributes.to_hash || {}).with_indifferent_access
       el_name = self.class.element_name rescue nil
