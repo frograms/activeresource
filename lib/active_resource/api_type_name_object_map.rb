@@ -33,10 +33,10 @@ module ActiveResource
     class << self
       def set(api_type_name, object)
         if object_map.key?(api_type_name)
-          raise Duplicated, "#{api_type_name} already mapped on #{object.name}"
+          raise Duplicated, "#{api_type_name} already mapped on #{object}"
         end
         if !object.nil? && api_type_name_map.key?(object)
-          raise Duplicated, "#{object.name} already mapped on #{api_type_name}"
+          raise Duplicated, "#{object} already mapped on #{api_type_name}"
         end
         object_map._set_(api_type_name, object)
         api_type_name_map._set_(object, api_type_name.to_s)
