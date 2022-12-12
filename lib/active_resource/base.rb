@@ -1209,12 +1209,15 @@ module ActiveResource
     #   my_other_course = Course.new(:name => "Philosophy: Reason and Being", :lecturer => "Ralph Cling")
     #   my_other_course.save
     def initialize(attributes = {}, persisted = false)
+      unless attributes.respond_to?(:to_hash)
+        raise ArgumentError, "expected attributes to be able to convert to Hash, got #{attributes.inspect}"
+      end
       @attributes     = {}.with_indifferent_access
       @prefix_options = {}
       @persisted = persisted
       @extra = {}
 
-      input = (attributes || {}).with_indifferent_access
+      input = (attributes.to_hash || {}).with_indifferent_access
       el_name = self.class.element_name rescue nil
       if el_name && input.key?(el_name)
         attrs, @extra = input.partition{|k, v| k == el_name}

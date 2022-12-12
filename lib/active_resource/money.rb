@@ -2,7 +2,7 @@ require 'money'
 require 'active_resource/schema'
 
 ActiveResource::Schema.set_custom_attribute_type(
-  ActiveResource::Schema::TypeConfig.new(:money) do |attributes, key, value|
+  ActiveResource::AttributeConfig.new(:money) do |attributes, key, value|
     attributes[key.to_s] = Money.new(value['cents'], value['currency'])
   end
 )

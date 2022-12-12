@@ -1,72 +1,41 @@
 # frozen_string_literal: true
+require 'active_resource/attribute_config'
 
 module ActiveResource # :nodoc:
   class Schema # :nodoc:
 
     class AlreadyDefinedMethod < Error; end
 
-    class TypeConfig
-      attr_reader :name, :load_proc
-
-      def initialize(name, &block)
-        @name = name
-        @load_proc = block || proc {|attributes, key, value| attributes[key] = value}
-      end
-
-      def set_load_proc(&block)
-        @load_proc = block
-      end
-
-      def load(attributes, key, value)
-        load_proc.call(attributes, key ,value)
-      end
-
-      def define_accessor_in_model(model, attr_name, repo_name, schema_name, options = {})
-        # TODO: add defaults
-        # the_attr = [type.to_s]
-        # the_attr << options[:default] if options.has_key? :default
-
-        if model.method_defined?(attr_name) || model.method_defined?("#{attr_name}=")
-          raise AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
-        end
-        model.define_method(attr_name) do
-          send(repo_name)[attr_name]
-        end
-        model.define_method("#{attr_name}=") do |value|
-          send(repo_name)[attr_name] = value
-        end
-      end
-    end
-
     # attributes can be known to be one of these types. They are easy to
     # cast to/from.
     KNOWN_ATTRIBUTE_TYPES = {
-      string: TypeConfig.new(:string),
-      text: TypeConfig.new(:text),
-      integer: TypeConfig.new(:integer) do |attributes, key, value|
+      string: AttributeConfig.new(:string),
+      text: AttributeConfig.new(:text),
+      integer: AttributeConfig.new(:integer) do |attributes, key, value|
         attributes[key] = value ? Integer(value) : nil
       end,
-      float: TypeConfig.new(:float) do |attributes, key, value|
+      float: AttributeConfig.new(:float) do |attributes, key, value|
         attributes[key] = value ? Float(value) : nil
       end,
-      decimal: TypeConfig.new(:decimal) do |attributes, key, value|
+      decimal: AttributeConfig.new(:decimal) do |attributes, key, value|
         attributes[key] = value ? Integer(value) : nil
       end,
-      datetime: TypeConfig.new(:datetime) do |attributes, key, value|
+      datetime: AttributeConfig.new(:datetime) do |attributes, key, value|
         attributes[key] = value ? Time.zone.parse(value) : nil
       end,
-      timestamp: TypeConfig.new(:timestamp) do |attributes, key, value|
+      timestamp: AttributeConfig.new(:timestamp) do |attributes, key, value|
         attributes[key] = value ? Time.zone.parse(value) : nil
       end,
-      time: TypeConfig.new(:time) do |attributes, key, value|
+      time: AttributeConfig.new(:time) do |attributes, key, value|
         attributes[key] = value ? Time.zone.parse(value) : nil
       end,
-      date: TypeConfig.new(:date) do |attributes, key, value|
+      date: AttributeConfig.new(:date) do |attributes, key, value|
         attributes[key] = value ? Date.parse(value) : nil
       end,
-      binary: TypeConfig.new(:binary),
-      boolean: TypeConfig.new(:boolean),
-      serialize: TypeConfig.new(:serialize)
+      binary: AttributeConfig.new(:binary),
+      boolean: AttributeConfig.new(:boolean),
+      serialize: AttributeConfig.new(:serialize),
+      enum: EnumAttributeConfig.new(:enum)
     }.with_indifferent_access
 
     @custom_attribute_types = {}.with_indifferent_access
@@ -83,7 +52,7 @@ module ActiveResource # :nodoc:
         define_attribute_method(config)
       end
 
-      def type_config(type)
+      def attribute_config(type)
         KNOWN_ATTRIBUTE_TYPES[type] || @custom_attribute_types[type]
       end
 
@@ -154,18 +123,20 @@ module ActiveResource # :nodoc:
         return self
       end
 
-      type_config = self.class.type_config(type)
-      @attrs[name.to_s] = type_config
-      type_config.define_accessor_in_model(@model, name, :attributes, :attrs, options) unless options[:skip_define_accessor]
+      attribute_config = self.class.attribute_config(type)
+      attribute_config = attribute_config.with_attribute(@model, name, type, options)
+      @attrs[name.to_s] = attribute_config
+      attribute_config.define_accessor_in_model(:attributes, :attrs)
       self
     end
 
     def extra_attribute(name, type, options = {})
       raise ArgumentError, "Unknown Attribute type: #{type.inspect} for key: #{name.inspect}" unless type.nil? || Schema.known_attribute_types.include?(type.to_s)
 
-      type_config = self.class.type_config(type)
-      @extra[name.to_s] = type_config
-      type_config.define_accessor_in_model(@model, name, :extra, :extra, options) unless options[:skip_define_accessor]
+      attribute_config = self.class.attribute_config(type)
+      attribute_config = attribute_config.with_attribute(@model, name, type, options)
+      @extra[name.to_s] = attribute_config
+      attribute_config.define_accessor_in_model(:extra, :extra)
     end
 
     # The following are the attribute types supported by Active Resource
