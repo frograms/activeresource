@@ -47,7 +47,8 @@ module ActiveResource
 
       def resource_capture_request(connection)
         connection.grab_request do |method, params, headers, payload|
-          yield(method, params, headers, payload)
+          result = yield(method, params, headers, payload)
+          response
         end
       end
     end
