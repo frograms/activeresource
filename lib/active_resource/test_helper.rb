@@ -1,5 +1,7 @@
 module ActiveResource
   module TestHelper
+    mattr_accessor :client_object_map
+
     class CaptureConnection < Connection
 
       def request(method, path, *arguments)
@@ -46,19 +48,36 @@ module ActiveResource
       def resource_capture_controller(connection)
         connection.grab_request do |method, path ,params, headers, payload|
           request.headers.merge(payload[:headers])
-          yield(method, params, payload)
+          ActiveResource.define_singleton_method(:api_type_name_object_map) { ApiTypeNameObjectMap }
+          result = yield(method, params, payload)
+          ActiveResource.define_singleton_method(:api_type_name_object_map) { TestClientMap }
+          result
         end
       end
 
       def resource_capture_request(connection)
         connection.grab_request do |method, path, params, headers, payload|
+          ActiveResource.define_singleton_method(:api_type_name_object_map) { ApiTypeNameObjectMap }
           result = if block_given?
             yield(method, path, params, headers, payload)
           else
             send(method, path, params: params, headers: headers)
           end
+          ActiveResource.define_singleton_method(:api_type_name_object_map) { TestHelper::TestClientMap }
           response
         end
+      end
+
+      def resource_client_object_map
+        ActiveResource::TestHelper.const_set(:TestClientMap, ActiveResource::ApiTypeNameObjectMap.dup)
+        TestClientMap.class_variable_set(:@@object_map, {}.with_indifferent_access)
+        TestClientMap.class_variable_set(:@@api_type_name_map, {})
+        TestClientMap.class_variable_set(:@@_object_fallback, proc { |api_type_name| api_type_name.constantize })
+        TestClientMap.class_variable_set(:@@_api_type_name_fallback, proc { |object| object.class.base_class.name })
+        ActiveResource.define_singleton_method(:api_type_name_object_map) { TestHelper::TestClientMap }
+        yield(TestClientMap) if block_given?
+        ActiveResource.define_singleton_method(:api_type_name_object_map) { ApiTypeNameObjectMap }
+        ActiveResource::TestHelper.send(:remove_const, :TestClientMap)
       end
     end
   end

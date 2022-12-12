@@ -3,6 +3,12 @@ require 'active_support/hash_with_indifferent_access'
 module ActiveResource
   class TypeNotFound < ActiveResource::Error; end
 
+  class << self
+    def api_type_name_object_map
+      ApiTypeNameObjectMap
+    end
+  end
+
   module ApiTypeNameObjectMap
     mattr_reader :object_map, default: {}.with_indifferent_access
     mattr_reader :api_type_name_map, default: {}

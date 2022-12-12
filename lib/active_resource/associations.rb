@@ -146,7 +146,7 @@ module ActiveResource::Associations
     if reflection.options[:polymorphic]
       define_method("#{method_name}=") do |obj|
         attributes[reflection.foreign_key] = obj&.id
-        attributes[reflection.foreign_type] = obj ? ActiveResource::ApiTypeNameObjectMap.find_api_type_name(obj) : nil
+        attributes[reflection.foreign_type] = obj ? ActiveResource.api_type_name_object_map.find_api_type_name(obj) : nil
         instance_variable_set(ivar_name, obj)
       end
     else

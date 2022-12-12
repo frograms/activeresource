@@ -1725,7 +1725,7 @@ module ActiveResource
           self.class.const_get(*const_args)
         else
           ancestors = self.class.name.to_s.split("::")
-          if (object = ApiTypeNameObjectMap.find_object(resource_name))
+          if (object = ActiveResource.api_type_name_object_map.find_object(resource_name))
             object
           elsif ancestors.size > 1
             find_or_create_resource_in_modules(resource_name, ancestors)
