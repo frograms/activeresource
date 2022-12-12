@@ -48,8 +48,8 @@ module ActiveResource
       @info = []
       @info << "Response code = #{response.code}" if response.respond_to?(:code)
       @info << "Response message = #{response.message}" if response.respond_to?(:message)
-      @info << "Response body message = #{response_body[:message]}" if response_body[:message]
-      @info << "Error message = #{@message}" if @message
+      @info << "Response body message = #{response_body&.dig(:message)}"
+      @info << "Error message = #{@message}"
       @info << "Request method = #{request[:method]}" if request[:method]
       @info << "Request path = #{request[:path]}" if request[:path]
       @info << "Request args = #{request[:arguments]}" if request[:arguments]
