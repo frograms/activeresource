@@ -23,8 +23,9 @@ module ActiveResource
           else
             params = Rack::Utils.parse_nested_query(uri.query)
           end
-          @grab_request.call(method, params, payload[:headers], payload)
+          @grab_request.call(method, uri.path, params, payload[:headers], payload)
         end
+        @grab_request = nil
         handle_response(result, request_args: [method, path, *arguments])
       rescue Timeout::Error => e
         raise TimeoutError.new(e.message)
@@ -39,15 +40,19 @@ module ActiveResource
 
     module Methods
       def resource_capture_controller(connection)
-        connection.grab_request do |method, params, headers, payload|
+        connection.grab_request do |method, path ,params, headers, payload|
           request.headers.merge(payload[:headers])
           yield(method, params, payload)
         end
       end
 
       def resource_capture_request(connection)
-        connection.grab_request do |method, params, headers, payload|
-          result = yield(method, params, headers, payload)
+        connection.grab_request do |method, path, params, headers, payload|
+          result = if block_given?
+            yield(method, path, params, headers, payload)
+          else
+            send(method, path, params: params, headers: headers)
+          end
           response
         end
       end
