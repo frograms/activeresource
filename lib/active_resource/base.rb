@@ -1576,6 +1576,10 @@ module ActiveResource
       load(attributes, false) && save
     end
 
+    def assign_attributes(attributes)
+      load(attributes, false)
+    end
+
     # For checking <tt>respond_to?</tt> without searching the attributes (which is faster).
     alias_method :respond_to_without_attributes?, :respond_to?
 
