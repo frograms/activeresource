@@ -697,10 +697,13 @@ module ActiveResource
         @collection_name ||= ActiveSupport::Inflector.pluralize(element_name)
       end
 
+      def root_class?; false end
+
       # act like ActiveRecord::Base
       def base_class
+        return self if superclass.root_class?
         return self if superclass == ActiveResource::Base
-        superclass
+        superclass.base_class
       end
 
       attr_writer :primary_key
