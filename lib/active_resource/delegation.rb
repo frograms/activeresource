@@ -1,9 +1,10 @@
 module ActiveResource
   class Delegation
     class << self
-      def merge_options(base_opts, arg_opts)
+      def merge_options(base_opts, arg_opts, except: [])
+        except += [:params]
         params_opts = (base_opts[:params] || {}).merge(arg_opts[:params] || {})
-        opts = base_opts.except(:params).merge(arg_opts.except(:params))
+        opts = base_opts.except(*except).merge(arg_opts.except(:params))
         opts[:params] = params_opts
         opts
       end
@@ -84,7 +85,7 @@ module ActiveResource
     end
 
     def build_options(opts)
-      merged = self.class.merge_options(@options, opts)
+      merged = self.class.merge_options(@options, opts, except: %i[__includes__ __order_by__ __extra__])
       params = merged.delete(:params).with_indifferent_access
       @resource.build_belongs_to_params!(params)
       @resource.build_has_many_params!(params)

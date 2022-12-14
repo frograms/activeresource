@@ -1014,6 +1014,10 @@ module ActiveResource
         end
       end
 
+      def find_by(hash)
+        where(hash).first
+      end
+
 
       # A convenience wrapper for <tt>find(:first, *args)</tt>. You can pass
       # in all the same arguments to this method as you can to
