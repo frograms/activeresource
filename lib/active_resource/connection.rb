@@ -114,6 +114,8 @@ module ActiveResource
       with_auth { request(:head, path, build_request_headers(headers, :head, self.site.merge(path))) }
     end
 
+    attr_reader :last_result
+
     private
       # Makes a request to the remote service.
       def request(method, path, *arguments)
@@ -122,6 +124,7 @@ module ActiveResource
           payload[:request_uri] = "#{site.scheme}://#{site.host}:#{site.port}#{path}"
           payload[:result]      = http.send(method, path, *arguments)
         end
+        @last_result = {request: [method, path, *arguments], response: result}
         handle_response(result, request_args: [method, path, *arguments])
       rescue Timeout::Error => e
         raise TimeoutError.new(e.message)

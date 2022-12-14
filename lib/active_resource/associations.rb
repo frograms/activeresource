@@ -135,7 +135,9 @@ module ActiveResource::Associations
       if instance_variable_defined?(ivar_name)
         instance_variable_get(ivar_name)
       elsif association_id = send(reflection.foreign_key)
-        instance_variable_set(ivar_name, reflection.klass(resource: self).find(association_id))
+        kl = reflection.klass(resource: self)
+        finder = :"find_by_#{kl.primary_key}"
+        instance_variable_set(ivar_name, reflection.klass(resource: self).send(finder, association_id))
       end
     end
 
