@@ -19,7 +19,8 @@ module ActiveResource
       @request[:path] = request_args[1]
       @request[:arguments] = request_args[2..-1] || []
       if @request[:path]
-        @request[:format] = @request[:path].scan(/.*\.(json|xml)$/).flatten[0]
+        uri = URI.parse(@request[:path])
+        @request[:format] = uri.path.scan(/.*\.(json|xml)$/).flatten[0]
       end
       if decoder && @response.body.present?
         @response_body = decoder.decode_as_it_is(@response.body)
