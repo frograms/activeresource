@@ -4,15 +4,16 @@ module ActiveResource
 
     def initialize(name, &block)
       @name = name
-      @load_proc = block || proc {|attributes, key, value| attributes[key] = value}
+      @options = {}
+      @load_proc = block || proc {|attributes, attr_name, value| attributes[attr_name] = value}
     end
 
     def set_load_proc(&block)
       @load_proc = block
     end
 
-    def load(attributes, key, value)
-      load_proc.call(attributes, key ,value)
+    def load(attributes, server_name, value)
+      load_proc.call(attributes, attr_name, value, self)
     end
 
     attr_reader :model, :attr_name, :attr_type, :options
@@ -22,22 +23,39 @@ module ActiveResource
       cfg.instance_variable_set(:@model, model)
       cfg.instance_variable_set(:@attr_name, attr_name)
       cfg.instance_variable_set(:@attr_type, attr_type)
+
+      if options[:extra] == true
+        options[:extra] = {default_request: true}
+      end
       cfg.instance_variable_set(:@options, options)
       cfg
     end
 
-    def define_accessor_in_model(repo_name, schema_name)
-      # TODO: add defaults
-      # the_attr = [type.to_s]
-      # the_attr << options[:default] if options.has_key? :default
+    def server_name
+      options[:server_name] || attr_name
+    end
 
+    def define_accessor_in_model(repo_name, schema_name)
       return if options[:skip_define_accessor]
       if model.method_defined?(attr_name) || model.method_defined?("#{attr_name}=")
         raise AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
       end
       attr_name = self.attr_name
-      model.define_method(attr_name) do
-        send(repo_name)[attr_name]
+      options = self.options
+      if options.has_key?(:default)
+        if options[:default].is_a?(Proc)
+          model.define_method(attr_name) do
+            send(repo_name)[attr_name] || options[:default].call(self)
+          end
+        else
+          model.define_method(attr_name) do
+            send(repo_name)[attr_name] || options[:default]
+          end
+        end
+      else
+        model.define_method(attr_name) do
+          send(repo_name)[attr_name]
+        end
       end
       model.define_method("#{attr_name}=") do |value|
         send(repo_name)[attr_name] = value

@@ -24,7 +24,7 @@ module ActiveResource
             if payload[:body]
               params = payload[:body]
             else
-              params = Rack::Utils.parse_nested_query(uri.query)
+              params = Rack::Utils.parse_nested_query(uri.query).with_indifferent_access
             end
             @grab_request.call(method, uri.path, params, payload[:headers], payload)
           end
@@ -32,6 +32,7 @@ module ActiveResource
         else
           result = super
         end
+        @last_result = {request: [method, path, *arguments], response: result}
         handle_response(result, request_args: [method, path, *arguments])
       rescue Timeout::Error => e
         raise TimeoutError.new(e.message)

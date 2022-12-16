@@ -995,7 +995,9 @@ module ActiveResource
       def find(*arguments)
         scope   = arguments.slice!(0)
         options = arguments.slice!(0) || {}
-        params = Delegation.build_extra_params(self, options, options[:params])
+        options = Delegation.merge_options(options)
+        params = options.delete(:params)
+        Delegation.build_params!(self, params)
         options[:params] = params
 
         case scope
@@ -1495,12 +1497,12 @@ module ActiveResource
       @prefix_options, attributes = split_options(attributes)
 
       attributes.each do |key, value|
-        if (extra_config = schema.extra[key])
+        if (extra_config = schema.extra_by_server_name[key])
           extra_config.load(@extra, key, value)
           next
         end
 
-        if (schema_config = schema.attrs[key])
+        if (schema_config = schema.attrs_by_server_name[key])
           schema_config.load(@attributes, key, value)
           next
         end

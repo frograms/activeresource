@@ -1,20 +1,63 @@
 module ActiveResource
   class Delegation
     class << self
-      def merge_options(base_opts, arg_opts, except: [])
-        except += [:params]
-        params_opts = (base_opts[:params] || {}).merge(arg_opts[:params] || {})
-        opts = base_opts.except(*except).merge(arg_opts.except(:params))
-        opts[:params] = params_opts
-        opts
+      def merge_options(*options)
+        result_opts = {}
+        params = {}
+        includes = []
+        extra = []
+        order_by = {}.with_indifferent_access
+
+        options.each do |opt|
+          opt = opt.dup
+          params.update(opt.delete(:params) || {})
+          includes += (Array.wrap(opt.delete(:includes)) || [])
+          extra += (Array.wrap(opt.delete(:extra)) || [])
+
+          opt_order_by = opt.delete(:order_by)
+          opt_order_by = case opt_order_by
+          when Symbol, String then { opt_order_by => :asc }
+          when Array then opt_order_by.index_with{ :asc }
+          when NilClass then {}
+          else opt_order_by
+          end
+          order_by.update(opt_order_by)
+
+          result_opts.update(opt)
+        end
+
+        params[:includes] = includes
+        params[:extra] = extra
+        params[:order_by] = order_by
+        result_opts[:params] = params
+        result_opts
       end
 
-      def build_extra_params(resource, options, params)
-        exts = resource.schema.extra.keys
-        exts += options[:extra] if options[:extra].present?
+      def build_includes_params!(resource, params)
+        incs = []
+        Array.wrap(params.delete(:includes)).each do |e|
+          incs << e if e.present?
+        end
+        if incs.present?
+          params[:__includes__] = incs.uniq
+        end
+        params
+      end
+
+      def build_extra_params!(resource, params)
+        ext_configs = resource.schema.extra.select{|k, v| v.options.dig(:extra, :default_request)}.values
+        exts = ext_configs.map{|cfg| cfg.server_name}
+
+        Array.wrap(params.delete(:extra)).each do |e|
+          if (e_config = resource.schema.extra[e])
+            exts << e_config.server_name
+          else
+            exts << e
+          end
+        end
+
         if exts.present?
-          params ||= {}
-          ext_set ||= Set.new
+          ext_set = Set.new
           exts.each do |ext|
             case ext
             when Symbol, String then ext_set << ext.to_s
@@ -33,6 +76,18 @@ module ActiveResource
         end
         params
       end
+
+      def build_order_by_params!(resource, params)
+        order_by = params.delete(:order_by)
+        params[:__order_by__] = order_by if order_by.present?
+        params
+      end
+
+      def build_params!(resource, params)
+        build_includes_params!(resource, params)
+        build_extra_params!(resource, params)
+        build_order_by_params!(resource, params)
+      end
     end
 
     attr_reader :_cache
@@ -43,9 +98,9 @@ module ActiveResource
       @resource = resource
       @options = options
       @options[:params] ||= {}
-      @options[:__includes__] ||= []
-      @options[:__extra__] ||= []
-      @options[:__order_by__] ||= {}.with_indifferent_access
+      @options[:includes] ||= []
+      @options[:extra] ||= []
+      @options[:order_by] ||= {}.with_indifferent_access
       @_cache = {}
     end
 
@@ -56,27 +111,27 @@ module ActiveResource
     end
 
     def includes(*args)
-      @options[:__includes__] += args
+      @options[:includes] += args
       @_cache = {}
       self
     end
 
     def extra(*args)
-      @options[:__extra__] += args
+      @options[:extra] += args
       @_cache = {}
       self
     end
 
     def order(*args, **kwargs)
       args.each do |k|
-        @options[:__order_by__][k] = 'ASC'
+        @options[:order_by][k] = 'ASC'
       end
       kwargs.each_pair do |k, v|
         v ||= 'ASC'
         v = v.to_s.upcase
         case v
-        when 'NONE' then @options[:__order_by__].delete(k)
-        when 'DESC', 'ASC' then @options[:__order_by__][k] = v
+        when 'NONE' then @options[:order_by].delete(k)
+        when 'DESC', 'ASC' then @options[:order_by][k] = v
         else raise "undefined sorting option: #{v}"
         end
       end
@@ -85,13 +140,11 @@ module ActiveResource
     end
 
     def build_options(opts)
-      merged = self.class.merge_options(@options, opts, except: %i[__includes__ __order_by__ __extra__])
+      merged = self.class.merge_options(@options, opts)
       params = merged.delete(:params).with_indifferent_access
       @resource.build_belongs_to_params!(params)
       @resource.build_has_many_params!(params)
-      params[:__includes__] = @options[:__includes__] if @options[:__includes__].present?
-      self.class.build_extra_params(@resource, @options, params)
-      params[:__order_by__] = @options[:__order_by__] if @options[:__order_by__].present?
+      self.class.build_params!(@resource, params)
       merged[:params] = params
       merged
     end

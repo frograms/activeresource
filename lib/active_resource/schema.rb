@@ -11,26 +11,26 @@ module ActiveResource # :nodoc:
     KNOWN_ATTRIBUTE_TYPES = {
       string: AttributeConfig.new(:string),
       text: AttributeConfig.new(:text),
-      integer: AttributeConfig.new(:integer) do |attributes, key, value|
-        attributes[key] = value ? Integer(value) : nil
+      integer: AttributeConfig.new(:integer) do |attributes, attr_name, value|
+        attributes[attr_name] = value ? Integer(value) : nil
       end,
-      float: AttributeConfig.new(:float) do |attributes, key, value|
-        attributes[key] = value ? Float(value) : nil
+      float: AttributeConfig.new(:float) do |attributes, attr_name, value|
+        attributes[attr_name] = value ? Float(value) : nil
       end,
-      decimal: AttributeConfig.new(:decimal) do |attributes, key, value|
-        attributes[key] = value ? Integer(value) : nil
+      decimal: AttributeConfig.new(:decimal) do |attributes, attr_name, value|
+        attributes[attr_name] = value ? Integer(value) : nil
       end,
-      datetime: AttributeConfig.new(:datetime) do |attributes, key, value|
-        attributes[key] = value ? Time.zone.parse(value) : nil
+      datetime: AttributeConfig.new(:datetime) do |attributes, attr_name, value|
+        attributes[attr_name] = value ? Time.zone.parse(value) : nil
       end,
-      timestamp: AttributeConfig.new(:timestamp) do |attributes, key, value|
-        attributes[key] = value ? Time.zone.parse(value) : nil
+      timestamp: AttributeConfig.new(:timestamp) do |attributes, attr_name, value|
+        attributes[attr_name] = value ? Time.zone.parse(value) : nil
       end,
-      time: AttributeConfig.new(:time) do |attributes, key, value|
-        attributes[key] = value ? Time.zone.parse(value) : nil
+      time: AttributeConfig.new(:time) do |attributes, attr_name, value|
+        attributes[attr_name] = value ? Time.zone.parse(value) : nil
       end,
-      date: AttributeConfig.new(:date) do |attributes, key, value|
-        attributes[key] = value ? Date.parse(value) : nil
+      date: AttributeConfig.new(:date) do |attributes, attr_name, value|
+        attributes[attr_name] = value ? Date.parse(value) : nil
       end,
       binary: AttributeConfig.new(:binary),
       boolean: AttributeConfig.new(:boolean),
@@ -77,6 +77,7 @@ module ActiveResource # :nodoc:
     # An array of attribute definitions, representing the attributes that
     # have been defined.
     attr_accessor :attrs, :extra
+    attr_accessor :attrs_by_server_name, :extra_by_server_name
 
     delegate :[], :has_key?, :<=>, :blank?, :present?, to: :attrs
 
@@ -95,11 +96,14 @@ module ActiveResource # :nodoc:
     def initialize(model, attrs: {})
       @model = model
       @attrs = attrs.with_indifferent_access
+      @extra = {}.with_indifferent_access
+      @attrs_by_server_name = {}.with_indifferent_access
+      @extra_by_server_name = {}.with_indifferent_access
+
       @attrs.each { |k, v| attribute(k, v) }
       unless @attrs.key?(@model.primary_key)
         attribute(@model.primary_key, 'integer', skip_define_accessor: true)
       end
-      @extra = {}.with_indifferent_access
     end
 
     # { 'name' => 'string', 'age' => 'integer' }
@@ -115,6 +119,14 @@ module ActiveResource # :nodoc:
       @extra.keys
     end
 
+    def extra_attribute_config_by_server_name(key)
+      @extra_by_server_name[key]
+    end
+
+    def server_attribute_names
+      @server_attribute_names ||= @attrs.values.map{|attribute_config| attribute_config.server_name.to_s}
+    end
+
     def attribute(name, type, options = {})
       raise ArgumentError, "Unknown Attribute type: #{type.inspect} for key: #{name.inspect}" unless type.nil? || Schema.known_attribute_types.include?(type.to_s)
 
@@ -126,6 +138,7 @@ module ActiveResource # :nodoc:
       attribute_config = self.class.attribute_config(type)
       attribute_config = attribute_config.with_attribute(@model, name, type, options)
       @attrs[name.to_s] = attribute_config
+      @attrs_by_server_name[attribute_config.server_name] = attribute_config
       attribute_config.define_accessor_in_model(:attributes, :attrs)
       self
     end
@@ -136,6 +149,7 @@ module ActiveResource # :nodoc:
       attribute_config = self.class.attribute_config(type)
       attribute_config = attribute_config.with_attribute(@model, name, type, options)
       @extra[name.to_s] = attribute_config
+      @extra_by_server_name[attribute_config.server_name] = attribute_config
       attribute_config.define_accessor_in_model(:extra, :extra)
     end
 
