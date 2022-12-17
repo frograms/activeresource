@@ -92,7 +92,7 @@ class AssociationTest < ActiveSupport::TestCase
     person = Person.new
     assert_not person.instance_variable_defined?(:@customer)
     person.stubs(:customer_id).returns(2)
-    Customer.expects(:find).with(:first, params: {'id' => 2}).once()
+    Customer.expects(:find).with(:first, {params: {'id' => 2}}.with_indifferent_access).once()
     2.times { person.customer }
     assert person.instance_variable_defined?(:@customer)
   end
@@ -112,7 +112,7 @@ class AssociationTest < ActiveSupport::TestCase
     assert_not person.instance_variable_defined?(:@customer)
     person.stubs(:customer_id).returns(2)
     person.stubs(:customer_type).returns('Customer')
-    Customer.expects(:find).with(:first, params: {'id' => 2}).once()
+    Customer.expects(:find).with(:first, {params: {'id' => 2}}.with_indifferent_access).once()
     2.times { person.customer }
     assert person.instance_variable_defined?(:@customer)
   end
@@ -122,7 +122,7 @@ class AssociationTest < ActiveSupport::TestCase
 
     person = Person.new
     person.stubs(:customer_id).returns(1)
-    Customer.expects(:find).with(:first, params: {'id' => 1}).once()
+    Customer.expects(:find).with(:first, {params: {'id' => 1}}.with_indifferent_access).once()
     person.customer
   end
 

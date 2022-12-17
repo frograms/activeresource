@@ -21,7 +21,7 @@ class ExtraSchemaTest < ActiveSupport::TestCase
     Project.schema do
       string :desc, extra: true
     end
-    p = Project.find(1)
+    p = Project.find(11)
     assert p.desc, "make a nuke"
   end
 
@@ -29,7 +29,8 @@ class ExtraSchemaTest < ActiveSupport::TestCase
     Project.schema do
       string :desc, extra: {default_request: false}
     end
-    p = Project.find(1)
+    p = Project.find(11)
     assert p.extra.has_key?(:desc) == false
+    assert p.desc == "make a nuke"
   end
 end

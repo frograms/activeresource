@@ -35,30 +35,59 @@ module ActiveResource
       options[:server_name] || attr_name
     end
 
-    def define_accessor_in_model(repo_name, schema_name)
+    def define_accessor_in_model
       return if options[:skip_define_accessor]
       if model.method_defined?(attr_name) || model.method_defined?("#{attr_name}=")
         raise AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
       end
       attr_name = self.attr_name
       options = self.options
+
       if options.has_key?(:default)
         if options[:default].is_a?(Proc)
           model.define_method(attr_name) do
-            send(repo_name)[attr_name] || options[:default].call(self)
+            attributes[attr_name] || options[:default].call(self)
           end
         else
           model.define_method(attr_name) do
-            send(repo_name)[attr_name] || options[:default]
+            attributes[attr_name] || options[:default]
           end
         end
       else
         model.define_method(attr_name) do
-          send(repo_name)[attr_name]
+          attributes[attr_name]
         end
       end
       model.define_method("#{attr_name}=") do |value|
-        send(repo_name)[attr_name] = value
+        attributes[attr_name] = value
+      end
+    end
+
+    def define_extra_accessor_in_model
+      return if options[:skip_define_accessor]
+      if model.method_defined?(attr_name) || model.method_defined?("#{attr_name}=")
+        raise AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
+      end
+      attr_name = self.attr_name
+      options = self.options
+
+      if options.has_key?(:default)
+        if options[:default].is_a?(Proc)
+          model.define_method(attr_name) do
+            reload(extra: attr_name) unless extra.has_key?(attr_name)
+            extra[attr_name] || options[:default].call(self)
+          end
+        else
+          model.define_method(attr_name) do
+            reload(extra: attr_name) unless extra.has_key?(attr_name)
+            extra[attr_name] || options[:default]
+          end
+        end
+      else
+        model.define_method(attr_name) do
+          reload(extra: attr_name) unless extra.has_key?(attr_name)
+          extra[attr_name]
+        end
       end
     end
   end
@@ -86,22 +115,43 @@ module ActiveResource
       ActiveResource::Base.logger.info(e.message)
     end
 
-    def define_accessor_in_model(repo_name, schema_name)
+    def define_accessor_in_model
       return if options[:skip_define_accessor]
       if model.method_defined?(attr_name) || model.method_defined?("#{attr_name}=")
         raise AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
       end
+
       attr_name = self.attr_name
       model.define_method(attr_name) do
-        send(repo_name)[attr_name]
+        attributes[attr_name]
       end
       model.define_method("#{attr_name}=") do |value|
         value = value.to_s.strip
-        schema.send(schema_name)[attr_name].validate!(value)
-        send(repo_name)[attr_name] = value
+        schema.attrs[attr_name].validate!(value)
+        attributes[attr_name] = value
       end
       model.define_singleton_method("#{attr_name}_values") do
-        schema.send(schema_name)[attr_name].allowed_values
+        schema.attrs[attr_name].allowed_values
+      end
+    end
+
+    def define_extra_accessor_in_model
+      return if options[:skip_define_accessor]
+      if model.method_defined?(attr_name) || model.method_defined?("#{attr_name}=")
+        raise AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
+      end
+
+      attr_name = self.attr_name
+      model.define_method(attr_name) do
+        extra[attr_name]
+      end
+      model.define_method("#{attr_name}=") do |value|
+        value = value.to_s.strip
+        schema.extra[attr_name].validate!(value)
+        extra[attr_name] = value
+      end
+      model.define_singleton_method("#{attr_name}_values") do
+        schema.extra[attr_name].allowed_values
       end
     end
   end

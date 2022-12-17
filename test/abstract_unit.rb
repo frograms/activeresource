@@ -152,8 +152,8 @@ def setup_response
     # pets
     mock.get "/people/1/pets.json", {}, @pets
     # projects
-    mock.get "/projects/1.json?__extra__%5B%5D=desc", {}, @project
-    mock.get "/projects/1.json", {}, JSON.parse(@project).except('desc').to_json
+    mock.get "/projects/11.json?__extra__%5B%5D=desc", {}, @project
+    mock.get "/projects/11.json", {}, JSON.parse(@project).except('desc').to_json
   end
 
   Person.user = nil

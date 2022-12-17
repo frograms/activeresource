@@ -33,6 +33,7 @@ module ActiveResource
   extend ActiveSupport::Autoload
 
   autoload :Base
+  autoload :Finder
   autoload :Callbacks
   autoload :Connection
   autoload :CustomMethods

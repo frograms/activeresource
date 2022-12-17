@@ -139,7 +139,7 @@ module ActiveResource # :nodoc:
       attribute_config = attribute_config.with_attribute(@model, name, type, options)
       @attrs[name.to_s] = attribute_config
       @attrs_by_server_name[attribute_config.server_name] = attribute_config
-      attribute_config.define_accessor_in_model(:attributes, :attrs)
+      attribute_config.define_accessor_in_model
       self
     end
 
@@ -150,7 +150,7 @@ module ActiveResource # :nodoc:
       attribute_config = attribute_config.with_attribute(@model, name, type, options)
       @extra[name.to_s] = attribute_config
       @extra_by_server_name[attribute_config.server_name] = attribute_config
-      attribute_config.define_accessor_in_model(:extra, :extra)
+      attribute_config.define_extra_accessor_in_model
     end
 
     # The following are the attribute types supported by Active Resource

@@ -992,13 +992,11 @@ module ActiveResource
       #   Person.find(:first)
       #   Person.find(:last)
       #   # => nil
-      def find(*arguments)
-        scope   = arguments.slice!(0)
-        options = arguments.slice!(0) || {}
-        options = Delegation.merge_options(options)
-        params = options.delete(:params)
-        Delegation.build_params!(self, params)
-        options[:params] = params
+      def find(*args, **kwargs)
+        scope   = args.slice!(0)
+        options = (args.slice!(0) || {}).with_indifferent_access
+        options.update(kwargs)
+        options = build_find_options(options)
 
         case scope
         when :all
@@ -1132,11 +1130,16 @@ module ActiveResource
           end
         end
 
+        def find_single_request(scope, prefix_options, query_options)
+          path = element_path(scope, prefix_options, query_options)
+          format.decode(connection.get(path, headers).body)
+        end
+
         # Find a single resource from the default URL
         def find_single(scope, options)
           prefix_options, query_options = split_options(options[:params])
-          path = element_path(scope, prefix_options, query_options)
-          instantiate_record(format.decode(connection.get(path, headers).body), prefix_options)
+          result = find_single_request(scope, prefix_options, query_options)
+          instantiate_record(result, prefix_options)
         end
 
         def instantiate_collection(collection, original_params = {}, prefix_options = {})
@@ -1236,7 +1239,7 @@ module ActiveResource
         attrs = input
       end
 
-      load(attrs, false, persisted)
+      load(attrs, persisted: persisted)
     end
 
     # Returns a \clone of the resource that hasn't been assigned an +id+ yet and
@@ -1463,8 +1466,10 @@ module ActiveResource
     #   my_branch.name # => "Wislon Raod"
     #   my_branch.reload
     #   my_branch.name # => "Wilson Road"
-    def reload
-      self.load(self.class.find(to_param, params: @prefix_options).attributes, false, true)
+    def reload(**options)
+      opts = self.class.build_find_options(options, {params: @prefix_options})
+      prefix_options, query_options = self.class.send(:split_options, opts[:params])
+      self.load(self.class.send(:find_single_request, to_param, prefix_options, query_options), persisted: true)
     end
 
     # A method to manually load attributes from a \hash. Recursively loads collections of
@@ -1488,7 +1493,14 @@ module ActiveResource
     #   your_supplier = Supplier.new
     #   your_supplier.load(my_attrs)
     #   your_supplier.save
-    def load(attributes, remove_root = false, persisted = false)
+    def load(*args, **kwargs)
+      if args.size > 0
+        attributes = args.shift
+        persisted = kwargs[:persisted]
+      else
+        persisted = kwargs.delete(:persisted)
+        attributes = kwargs
+      end
       unless attributes.respond_to?(:to_hash)
         raise ArgumentError, "expected attributes to be able to convert to Hash, got #{attributes.inspect}"
       end
@@ -1582,11 +1594,11 @@ module ActiveResource
     # resource's attributes, the full body of the request will still be sent
     # in the save request to the remote service.
     def update_attributes(attributes)
-      load(attributes, false) && save
+      load(attributes) && save
     end
 
     def assign_attributes(attributes)
-      load(attributes, false)
+      load(attributes)
     end
 
     # For checking <tt>respond_to?</tt> without searching the attributes (which is faster).
@@ -1662,7 +1674,7 @@ module ActiveResource
         if response_code_allows_body?(response.code.to_i) &&
             (response["Content-Length"].nil? || response["Content-Length"] != "0") &&
             !response.body.nil? && response.body.strip.size > 0
-          load(self.class.format.decode(response.body), true, true)
+          load(self.class.format.decode(response.body), persisted: true)
           @persisted = true
         end
       end
@@ -1801,6 +1813,7 @@ module ActiveResource
     include ActiveModel::Serializers::JSON
     include ActiveModel::Serializers::Xml
     include ActiveResource::Reflection
+    include ActiveResource::Finder
   end
 
   ActiveSupport.run_load_hooks(:active_resource, Base)
