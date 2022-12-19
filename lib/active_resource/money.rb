@@ -2,8 +2,8 @@ require 'money'
 require 'active_resource/schema'
 
 ActiveResource::Schema.set_custom_attribute_type(
-  ActiveResource::AttributeConfig.new(:money) do |attributes, key, value|
-    attributes[key.to_s] = Money.new(value['cents'], value['currency'])
+  ActiveResource::AttributeConfig.new(:money) do |resource, repo_name, attr_name, value|
+    resource.send(repo_name)[attr_name.to_s] = Money.new(value['cents'], value['currency'])
   end
 )
 
