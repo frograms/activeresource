@@ -1553,8 +1553,12 @@ module ActiveResource
           resource = find_or_create_resource_for(key, value: value)
           if defined?(ActiveRecord) && resource < ActiveRecord::Base
             attr = value.dup
-            attr.delete('__type__')
-            ins = resource.new(attr)
+            if resource.instance_methods.include?(:assign_resource_attributes)
+              ins = resource.new
+              ins.assign_resource_attributes(attr)
+            else
+              ins = resource.new(attr)
+            end
             ins.instance_variable_set(:@new_record, false) if persisted?
             if respond_to?(:"#{key}=")
               send(:"#{key}=", ins)
