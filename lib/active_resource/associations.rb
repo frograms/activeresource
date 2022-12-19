@@ -182,21 +182,55 @@ module ActiveResource::Associations
     method_name = reflection.name
     ivar_name = :"@#{method_name}"
 
-    define_method(method_name) do
-      if instance_variable_defined?(ivar_name)
-        instance_variable_get(ivar_name)
-      elsif attributes.include?(method_name)
-        attributes[method_name]
-      elsif !new_record?
-        klass = reflection.klass(resource: self)
-        if klass < ActiveResource::Base
-          instance_variable_set(ivar_name, klass.find(:all, params: { "#{self.class.element_name}_id": self.id }))
-        else
-          # assume ActiveRecord::Base
-          instance_variable_set(ivar_name, klass.where("#{self.class.element_name}_id": self.id))
-        end
+    if reflection.options[:extra].present?
+      if reflection.options[:extra] == true
+        extra_opts = {default_request: false}
       else
-        instance_variable_set(ivar_name, self.class.collection_parser.new)
+        extra_opts = reflection.options[:extra]
+      end
+
+      if reflection.options[:schema].present?
+        schema_args = Array.wrap(reflection.options[:schema])
+        type = schema_args[0]
+        opts = schema_args[1] || {}
+        opts[:extra] = extra_opts
+        opts[:array] = true
+        schema do
+          send(type, reflection.name, **opts)
+        end
+      end
+      
+      define_method(method_name) do
+        if instance_variable_defined?(ivar_name)
+          instance_variable_get(ivar_name)
+        elsif extra.include?(method_name)
+          extra[method_name]
+        else
+          reload(extra: reflection.name)
+          extra[method_name]
+        end
+      end
+    else
+      define_method(method_name) do
+        if instance_variable_defined?(ivar_name)
+          instance_variable_get(ivar_name)
+        elsif attributes.include?(method_name)
+          attributes[method_name]
+        elsif !new_record?
+          klass = reflection.klass(resource: self)
+          if klass < ActiveResource::Base
+            instance_variable_set(ivar_name, klass.find(:all, params: { "#{self.class.element_name}_id": self.id }))
+          else
+            # assume ActiveRecord::Base
+            instance_variable_set(ivar_name, klass.where("#{self.class.element_name}_id": self.id))
+          end
+        else
+          instance_variable_set(ivar_name, self.class.collection_parser.new)
+        end
+      end
+
+      define_method("#{method_name}=") do |col|
+        instance_variable_set(ivar_name, col)
       end
     end
   end

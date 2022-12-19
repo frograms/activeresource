@@ -11,26 +11,26 @@ module ActiveResource # :nodoc:
     KNOWN_ATTRIBUTE_TYPES = {
       string: AttributeConfig.new(:string),
       text: AttributeConfig.new(:text),
-      integer: AttributeConfig.new(:integer) do |attributes, attr_name, value|
-        attributes[attr_name] = value ? Integer(value) : nil
+      integer: AttributeConfig.new(:integer) do |resource, repo_name, attr_name, value|
+        resource.send(repo_name)[attr_name] = value ? Integer(value) : nil
       end,
-      float: AttributeConfig.new(:float) do |attributes, attr_name, value|
-        attributes[attr_name] = value ? Float(value) : nil
+      float: AttributeConfig.new(:float) do |resource, repo_name, attr_name, value|
+        resource.send(repo_name)[attr_name] = value ? Float(value) : nil
       end,
-      decimal: AttributeConfig.new(:decimal) do |attributes, attr_name, value|
-        attributes[attr_name] = value ? Integer(value) : nil
+      decimal: AttributeConfig.new(:decimal) do |resource, repo_name, attr_name, value|
+        resource.send(repo_name)[attr_name] = value ? Integer(value) : nil
       end,
-      datetime: AttributeConfig.new(:datetime) do |attributes, attr_name, value|
-        attributes[attr_name] = value ? Time.zone.parse(value) : nil
+      datetime: AttributeConfig.new(:datetime) do |resource, repo_name, attr_name, value|
+        resource.send(repo_name)[attr_name] = value ? Time.zone.parse(value) : nil
       end,
-      timestamp: AttributeConfig.new(:timestamp) do |attributes, attr_name, value|
-        attributes[attr_name] = value ? Time.zone.parse(value) : nil
+      timestamp: AttributeConfig.new(:timestamp) do |resource, repo_name, attr_name, value|
+        resource.send(repo_name)[attr_name] = value ? Time.zone.parse(value) : nil
       end,
-      time: AttributeConfig.new(:time) do |attributes, attr_name, value|
-        attributes[attr_name] = value ? Time.zone.parse(value) : nil
+      time: AttributeConfig.new(:time) do |resource, repo_name, attr_name, value|
+        resource.send(repo_name)[attr_name] = value ? Time.zone.parse(value) : nil
       end,
-      date: AttributeConfig.new(:date) do |attributes, attr_name, value|
-        attributes[attr_name] = value ? Date.parse(value) : nil
+      date: AttributeConfig.new(:date) do |resource, repo_name, attr_name, value|
+        resource.send(repo_name)[attr_name] = value ? Date.parse(value) : nil
       end,
       binary: AttributeConfig.new(:binary),
       boolean: AttributeConfig.new(:boolean),

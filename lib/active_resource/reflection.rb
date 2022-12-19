@@ -14,7 +14,7 @@ module ActiveResource
 
     included do
       class_attribute :reflections
-      self.reflections = {}
+      self.reflections = {}.with_indifferent_access
     end
 
     module ClassMethods
@@ -77,6 +77,10 @@ module ActiveResource
 
       def foreign_type
         @foreign_type ||= derive_foreign_type
+      end
+
+      def join_foreign_key
+        @join_foreign_key ||= klass.primary_key
       end
 
       private

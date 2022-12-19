@@ -1,19 +1,34 @@
 module ActiveResource
   class AttributeConfig
-    attr_reader :name, :load_proc
+    attr_reader :name, :options, :load_proc, :after_collect
 
     def initialize(name, &block)
       @name = name
       @options = {}
-      @load_proc = block || proc {|attributes, attr_name, value| attributes[attr_name] = value}
+      @load_proc = block || proc do |resource, repository_name, attr_name, value|
+        resource.send(repository_name)[attr_name] = value
+      end
     end
 
     def set_load_proc(&block)
       @load_proc = block
     end
 
-    def load(attributes, server_name, value)
-      load_proc.call(attributes, attr_name, value, self)
+    def load(resource, repository_name, server_name, value, **options)
+      if options[:collection] && @after_collect_proc
+        options[:collection].collect_cache[self] ||= {}
+        options[:collect_cache] = options[:collection].collect_cache[self]
+      end
+      options.update(attribute_config: self)
+      load_proc.call(resource, repository_name, attr_name, value, **options)
+    end
+
+    def after_collect(&block)
+      @after_collect_proc = block
+    end
+
+    def run_after_collect(cache)
+      @after_collect_proc.call(self, cache)
     end
 
     attr_reader :model, :attr_name, :attr_type, :options
@@ -93,10 +108,11 @@ module ActiveResource
   end
 
   class EnumAttributeConfig < AttributeConfig
-    def load(attributes, key, value)
+    def load(resource, repository_name, server_name, value, **options)
       value = value.to_s.strip
       validate(value)
-      load_proc.call(attributes, key, value)
+      options[:attribute_config] = self
+      load_proc.call(resource, repository_name, attr_name, value, **options)
     end
 
     def allowed_values

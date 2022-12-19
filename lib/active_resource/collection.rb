@@ -10,7 +10,7 @@ module ActiveResource # :nodoc:
     delegate :to_yaml, :all?, *(Array.instance_methods(false) - SELF_DEFINE_METHODS), to: :to_a
 
     # The array of actual elements returned by index actions
-    attr_accessor :elements, :resource_class, :original_params
+    attr_accessor :elements, :resource_class, :original_params, :after_collect
 
     # ActiveResource::Collection is a wrapper to handle parsing index responses that
     # do not directly map to Rails conventions.
@@ -64,11 +64,18 @@ module ActiveResource # :nodoc:
       elements
     end
 
+    def collect_cache
+      @collect_cache ||= {}
+    end
+
     def collect!
       return elements unless block_given?
       set = []
       each { |o| set << yield(o) }
       @elements = set
+      collect_cache.each_pair do |attr_config, cache|
+        attr_config.run_after_collect(cache)
+      end
       self
     end
     alias map! collect!

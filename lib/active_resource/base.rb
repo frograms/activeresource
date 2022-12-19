@@ -1143,14 +1143,16 @@ module ActiveResource
         end
 
         def instantiate_collection(collection, original_params = {}, prefix_options = {})
-          collection_parser.new(collection).tap do |parser|
+          col = collection_parser.new(collection).tap do |parser|
             parser.resource_class  = self
             parser.original_params = original_params
-          end.collect! { |record| instantiate_record(record, prefix_options) }
+          end
+          col.collect! { |record| instantiate_record(record, prefix_options.merge(collection: col)) }
         end
 
         def instantiate_record(record, prefix_options = {})
-          new(record, true).tap do |resource|
+          col = prefix_options.delete(:collection)
+          new(record, persisted: true, collection: col).tap do |resource|
             resource.prefix_options = prefix_options
           end
         end
@@ -1220,13 +1222,29 @@ module ActiveResource
     #
     #   my_other_course = Course.new(:name => "Philosophy: Reason and Being", :lecturer => "Ralph Cling")
     #   my_other_course.save
-    def initialize(attributes = {}, persisted = false)
+    def initialize(*args, **kwargs)
+      if args.size > 0
+        attributes = args.shift
+        if args.size > 0
+          persisted = args.shift
+          options = kwargs
+        else
+          persisted = kwargs.delete(:persisted)
+          options = kwargs
+        end
+      else
+        persisted = kwargs.delete(:persisted)
+        attributes = kwargs
+        options = {}
+      end
+      options[:persisted] = persisted
+
       unless attributes.respond_to?(:to_hash)
         raise ArgumentError, "expected attributes to be able to convert to Hash, got #{attributes.inspect}"
       end
       @attributes     = {}.with_indifferent_access
       @prefix_options = {}
-      @persisted = persisted
+      @persisted = options[:persisted]
       @extra = {}.with_indifferent_access
 
       input = (attributes.to_hash || {}).with_indifferent_access
@@ -1239,7 +1257,7 @@ module ActiveResource
         attrs = input
       end
 
-      load(attrs, persisted: persisted)
+      load(attrs, **options)
     end
 
     # Returns a \clone of the resource that hasn't been assigned an +id+ yet and
@@ -1496,7 +1514,8 @@ module ActiveResource
     def load(*args, **kwargs)
       if args.size > 0
         attributes = args.shift
-        persisted = kwargs[:persisted]
+        persisted = kwargs.delete(:persisted)
+        options = kwargs
       else
         persisted = kwargs.delete(:persisted)
         attributes = kwargs
@@ -1510,12 +1529,12 @@ module ActiveResource
 
       attributes.each do |key, value|
         if (extra_config = schema.extra_by_server_name[key])
-          extra_config.load(@extra, key, value)
+          extra_config.load(self, :extra, key, value, collection: options[:collection])
           next
         end
 
         if (schema_config = schema.attrs_by_server_name[key])
-          schema_config.load(@attributes, key, value)
+          schema_config.load(self, :attributes, key, value, collection: options[:collection])
           next
         end
 
