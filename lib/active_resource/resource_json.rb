@@ -29,15 +29,27 @@ module ActiveResource
         ResourceJson.methods_prefix
       end
 
+      def resource_method_name(mtd)
+        :"#{resource_methods_prefix}#{mtd}"
+      end
+
       def allow_resource_json(*mtds)
         mtds.each do |mtd|
-          alias_method :"#{resource_methods_prefix}#{mtd}", mtd
+          alias_method resource_method_name(mtd), mtd
         end
+      end
+
+      def allow_resource_json?(mtd)
+        instance_methods.include?(resource_method_name(mtd))
       end
     end
 
     def resource_methods_prefix
       self.class.resource_methods_prefix
+    end
+
+    def allow_resource_json?(mtd)
+      self.class.allow_resource_json?(mtd)
     end
 
     def resource_json(options = nil)

@@ -33,6 +33,12 @@ module ActiveResource
           result = super
         end
         @last_result = {request: [method, path, *arguments], response: result}
+        if result.is_a?(String)
+          mock = OpenStruct.new
+          mock.body = result
+          mock.code = 200
+          result = mock
+        end
         handle_response(result, request_args: [method, path, *arguments])
       rescue Timeout::Error => e
         raise TimeoutError.new(e.message)
