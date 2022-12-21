@@ -1009,6 +1009,12 @@ module ActiveResource
           collection && collection.last
         when :one
           find_one(options)
+        when :count
+          options[:params] ||= {}
+          options[:params][:__extra__] = [:__count__]
+          find_every(options)
+        when :sum
+          find_every(options)
         else
           find_single(scope, options)
         end
@@ -1112,7 +1118,13 @@ module ActiveResource
               format.decode(connection.get(path, headers).body)
             end
 
-          instantiate_collection(response || [], query_options, prefix_options)
+          if query_options[:__extra__]&.include?(:__count__)
+            response['result']
+          elsif query_options[:__sum__]
+            response['result']
+          else
+            instantiate_collection(response || [], query_options, prefix_options)
+          end
         rescue ActiveResource::ResourceNotFound
           # Swallowing ResourceNotFound exceptions and return nil - as per
           # ActiveRecord.

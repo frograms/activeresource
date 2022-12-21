@@ -86,5 +86,18 @@ module ActiveResource
       opts = arguments.extract_options!
       @resource.find(*arguments, build_options(opts))
     end
+
+    def sum(attribute)
+      return _cache.dig(:sum, attribute.to_s) if _cache.dig(:sum, attribute.to_s)
+      _cache[:sum] ||= {}
+      opts = build_options
+      opts[:sum] = attribute
+      _cache[:sum][attribute.to_s] = @resource.find(:sum, opts)
+    end
+
+    def count
+      return _cache[:count] if _cache[:count]
+      _cache[:count] = @resource.find(:count, build_options)
+    end
   end
 end

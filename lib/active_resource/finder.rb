@@ -16,6 +16,7 @@ module ActiveResource
         includes = Set.new
         extra = Set.new
         order_by = {}.with_indifferent_access
+        sum = nil
 
         options.each do |option|
           opt = option.with_indifferent_access
@@ -24,6 +25,7 @@ module ActiveResource
           includes += Array.wrap(opt_params.delete(:includes))
           extra += Array.wrap(opt.delete(:extra))
           extra += Array.wrap(opt_params.delete(:extra))
+          sum = opt.delete(:sum) || opt_params.delete(:sum)
 
           opt_order_by = opt.delete(:order_by)
           order_by.update(make_order_by_params(opt_order_by))
@@ -37,6 +39,7 @@ module ActiveResource
         params[:includes] = includes.to_a if includes.present?
         params[:extra] = extra.to_a if extra.present?
         params[:order_by] = order_by if order_by.present?
+        params[:sum] = sum if sum
         result_opts[:params] = params
         result_opts
       end
@@ -85,10 +88,17 @@ module ActiveResource
         params
       end
 
+      def build_sum_params!(params)
+        sum = params.delete(:sum)
+        params[:__sum__] = sum if sum.present?
+        params
+      end
+
       def build_params!(params)
         build_includes_params!(params)
         build_extra_params!(params)
         build_order_by_params!(params)
+        build_sum_params!(params)
       end
     end
   end
