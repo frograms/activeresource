@@ -90,7 +90,7 @@ module ActiveResource
 
       def build_sum_params!(params)
         sum = params.delete(:sum)
-        params[:__sum__] = sum if sum.present?
+        params[:__invoke__] = {method_name: :sum, args: sum} if sum.present?
         params
       end
 

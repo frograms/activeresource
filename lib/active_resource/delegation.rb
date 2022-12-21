@@ -99,5 +99,10 @@ module ActiveResource
       return _cache[:count] if _cache[:count]
       _cache[:count] = @resource.find(:count, build_options)
     end
+
+    def exists?
+      return _cache[:exists?] if _cache[:exists?]
+      _cache[:exists?] = @resource.find(:exists?, build_options)
+    end
   end
 end

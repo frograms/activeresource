@@ -999,7 +999,7 @@ module ActiveResource
         options = build_find_options(options)
 
         case scope
-        when :all
+        when :all, :sum
           find_every(options)
         when :first
           collection = find_every(options)
@@ -1011,9 +1011,11 @@ module ActiveResource
           find_one(options)
         when :count
           options[:params] ||= {}
-          options[:params][:__extra__] = [:__count__]
+          options[:params][:__invoke__] = {method_name: :count}
           find_every(options)
-        when :sum
+        when :exists?
+          options[:params] ||= {}
+          options[:params][:__invoke__] = {method_name: :exists?}
           find_every(options)
         else
           find_single(scope, options)
@@ -1118,9 +1120,7 @@ module ActiveResource
               format.decode(connection.get(path, headers).body)
             end
 
-          if query_options[:__extra__]&.include?(:__count__)
-            response['result']
-          elsif query_options[:__sum__]
+          if query_options[:__invoke__]
             response['result']
           else
             instantiate_collection(response || [], query_options, prefix_options)
