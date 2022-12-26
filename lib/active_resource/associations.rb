@@ -239,10 +239,10 @@ module ActiveResource::Associations
     reflections_of(macro: :has_many).each do |name, assoc|
       if params.key?(name) && params[name]
         param_values = Array.wrap(params.delete(name))
-        if assoc.options[:params_key]
-          params[assoc.options[:params_key]] = param_values.map do |v|
-            {type: v.class.base_class.name, id: v.send(v.class.primary_key)}
-          end
+        if (params_opts = assoc.options[:params_opts])
+          params_name = params_opts[:name] || assoc.name.to_s
+          to_param = params_opts[:to_param] || :to_param
+          params[params_name] = param_values.map(&to_param)
         else
           if (invalid = param_values.find{|v| !v.respond_to?(assoc.foreign_key)})
             raise ActiveResource::InvalidValue, "associated object must have foreign_key method: #{invalid.class.name} don't have `#{assoc.foreign_key}` method"

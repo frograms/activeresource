@@ -5,7 +5,7 @@ module ActiveResource
 
     attr_reader :_cache
 
-    delegate :each, to: :to_a
+    delegate :each, :each_with_index, :[], :size, to: :to_a
 
     def initialize(resource, options = {})
       @resource = resource
