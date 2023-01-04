@@ -138,8 +138,9 @@ module ActiveResource
       end
 
       attr_name = self.attr_name
+      options = self.options
       model.define_method(attr_name) do
-        attributes[attr_name]
+        attributes.key?(attr_name) ? attributes[attr_name] : options[:default]
       end
       model.define_method("#{attr_name}=") do |value|
         value = value.to_s.strip

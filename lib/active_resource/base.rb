@@ -795,7 +795,7 @@ module ActiveResource
       #
       def element_path(id, prefix_options = {}, query_options = nil, options = {})
         check_prefix_options(prefix_options)
-        raise InvalidValue, "blank id" if id.blank?
+        raise InvalidValue, "Couldn't make ActiveResource element_path without an ID" if id.blank?
         prefix_options, query_options = split_options(prefix_options) if query_options.nil?
         base_path = "#{prefix(prefix_options)}#{collection_name}/#{URI.encode_www_form_component(id.to_s)}"
         base_path = "#{base_path}/#{options[:action]}" if options[:action].present?

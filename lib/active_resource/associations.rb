@@ -165,10 +165,10 @@ module ActiveResource::Associations
         if assoc.options[:polymorphic]
           value = Array.wrap(value)
           if value.map{|v| v.class.base_class.name}.uniq.one?
-            params[assoc.foreign_type] = value.first.class.base_class.name
+            params[assoc.foreign_type] = ActiveResource.api_type_name_object_map.find_api_type_name(value.first)
             params[assoc.foreign_key] = value.map{|v| v.send(v.class.primary_key)}
           else
-            params[name] = value.map{|v| {type: v.class.base_class.name, id: v.send(v.class.primary_key)}}
+            params[name] = value.map{|v| {type: ActiveResource.api_type_name_object_map.find_api_type_name(v), id: v.send(v.class.primary_key)}}
           end
         else
           val = Array.wrap(value).map{|v| v.send(v.class.primary_key)}
@@ -219,10 +219,10 @@ module ActiveResource::Associations
         elsif !new_record?
           klass = reflection.klass(resource: self)
           if klass < ActiveResource::Base
-            instance_variable_set(ivar_name, klass.find(:all, params: { "#{self.class.element_name}_id": self.id }))
+            instance_variable_set(ivar_name, klass.find(:all, params: { reflection.foreign_key => self.id }))
           else
             # assume ActiveRecord::Base
-            instance_variable_set(ivar_name, klass.where("#{self.class.element_name}_id": self.id))
+            instance_variable_set(ivar_name, klass.where(reflection.foreign_key => self.id))
           end
         else
           instance_variable_set(ivar_name, self.class.collection_parser.new)

@@ -6,6 +6,7 @@ require "fixtures/person"
 require "fixtures/beast"
 require "fixtures/customer"
 require "fixtures/post"
+require "fixtures/api_type_name_object_map"
 
 
 class AssociationTest < ActiveSupport::TestCase
@@ -149,5 +150,12 @@ class AssociationTest < ActiveSupport::TestCase
     assert_nothing_raised do
       eval code
     end
+  end
+
+  def test_post_belongs_to_project
+    post = Post.new
+    post.project = BeastResource.new(id: 11)
+    assert_equal post.attributes['project_type'], 'Server::Beast'
+    assert_equal post.attributes['project_id'], 11
   end
 end
