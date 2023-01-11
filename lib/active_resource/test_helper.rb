@@ -91,7 +91,7 @@ module ActiveResource
         mod.define_singleton_method(:api_type_name_map) { api_type_name_map }
         object_fallback = proc { |api_type_name| api_type_name.constantize }
         mod.define_singleton_method(:_object_fallback) { object_fallback }
-        api_type_name_fallback = proc { |object| object.class.base_class.name }
+        api_type_name_fallback = proc { |object| (object.is_a?(String) ? object.constantize : object).base_class.name }
         mod.define_singleton_method(:_api_type_name_fallback) { api_type_name_fallback }
         ActiveResource.define_singleton_method(:api_type_name_object_map) { mod }
         yield(mod) if block_given?
