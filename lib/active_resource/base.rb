@@ -1107,6 +1107,7 @@ module ActiveResource
           params = options[:params]
           prefix_options, query_options = split_options(params)
           query_options.delete(:__extra__) if query_options[:__extra__].blank?
+          hs = headers.merge(expect_result_type: :collection)
 
           response =
             case from = options[:from]
@@ -1114,10 +1115,10 @@ module ActiveResource
               get(from, params)
             when String
               path = "#{from}#{query_string(query_options)}"
-              format.decode(connection.get(path, headers).body)
+              format.decode(connection.get(path, hs).body)
             else
               path = collection_path(prefix_options, query_options)
-              format.decode(connection.get(path, headers).body)
+              format.decode(connection.get(path, hs).body)
             end
 
           if query_options[:__invoke__]
@@ -1138,13 +1139,15 @@ module ActiveResource
             instantiate_record(get(from, options[:params]))
           when String
             path = "#{from}#{query_string(options[:params])}"
-            instantiate_record(format.decode(connection.get(path, headers).body))
+            hs = headers.merge(expect_result_type: :single)
+            instantiate_record(format.decode(connection.get(path, hs).body))
           end
         end
 
         def find_single_request(scope, prefix_options, query_options)
           path = element_path(scope, prefix_options, query_options)
-          format.decode(connection.get(path, headers).body)
+          hs = headers.merge(expect_result_type: :single)
+          format.decode(connection.get(path, hs).body)
         end
 
         # Find a single resource from the default URL
