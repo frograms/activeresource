@@ -21,7 +21,6 @@ module ActiveResource
     }
 
     attr_reader :site, :user, :password, :bearer_token, :auth_type, :timeout, :open_timeout, :read_timeout, :proxy, :ssl_options
-    attr_accessor :http_base, :http_wrapper
     attr_accessor :format, :logger
 
     class << self
@@ -38,7 +37,6 @@ module ActiveResource
       self.site = site
       self.format = format
       self.logger = logger
-      self.http_wrapper = proc{|conn| conn.send(:http)}
     end
 
     # Set URI for remote service.
@@ -124,7 +122,7 @@ module ActiveResource
         result = ActiveSupport::Notifications.instrument("request.active_resource") do |payload|
           payload[:method]      = method
           payload[:request_uri] = "#{site.scheme}://#{site.host}:#{site.port}#{path}"
-          payload[:result]      = http_wrapper.call(self).send(method, path, *arguments)
+          payload[:result]      = http.send(method, path, *arguments)
         end
         @last_result = {request: [method, path, *arguments], response: result}
         handle_response(result, request_args: [method, path, *arguments])
