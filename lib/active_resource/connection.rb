@@ -24,6 +24,10 @@ module ActiveResource
     attr_accessor :format, :logger
 
     class << self
+      def response_wrapper
+        proc{|response| response}
+      end
+
       def requests
         @@requests ||= []
       end
@@ -124,6 +128,7 @@ module ActiveResource
           payload[:request_uri] = "#{site.scheme}://#{site.host}:#{site.port}#{path}"
           payload[:result]      = http.send(method, path, *arguments)
         end
+        result = self.class.response_wrapper.call(result)
         @last_result = {request: [method, path, *arguments], response: result}
         handle_response(result, request_args: [method, path, *arguments])
       rescue Timeout::Error => e
