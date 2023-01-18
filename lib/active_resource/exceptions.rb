@@ -44,6 +44,17 @@ module ActiveResource
       message
     end
 
+    def to_hash
+      res = {request: @request, message: @message}
+      if @response.respond_to?(:to_hash)
+        res[:response] = @response.to_hash
+      else
+        res[:response] = @response.inspect
+      end
+      res
+    end
+    alias_method :to_h, :to_hash
+
     def info
       return @info if @info
       @info = []

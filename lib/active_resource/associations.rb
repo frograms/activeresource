@@ -220,6 +220,8 @@ module ActiveResource::Associations
           klass = reflection.klass(resource: self)
           if klass < ActiveResource::Base
             instance_variable_set(ivar_name, klass.find(:all, params: { reflection.foreign_key => self.id }))
+          elsif reflection.options[:getter]
+            instance_variable_set(ivar_name, self.send(reflection.options[:getter]))
           else
             # assume ActiveRecord::Base
             instance_variable_set(ivar_name, klass.where(reflection.foreign_key => self.id))
