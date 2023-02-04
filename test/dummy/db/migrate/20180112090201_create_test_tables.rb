@@ -12,12 +12,16 @@
 # It's strongly recommended that you check this file into your version control system.
 
 class CreateTestTables < ActiveRecord::Migration[7.0]
-  def change
+  def up
     create_table "songs" do |t|
       t.string "singer_type"
-      t.string "singer_id"
+      t.integer "singer_id"
       t.string "name"
       t.timestamps
     end
+  end
+
+  def down
+    drop_table :songs
   end
 end

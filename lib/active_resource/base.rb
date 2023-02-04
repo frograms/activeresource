@@ -22,6 +22,7 @@ require "active_resource/threadsafe_attributes"
 require "active_resource/delegation"
 
 require "active_model/serializers/xml"
+require "active_model/attribute_methods"
 
 module ActiveResource
   # ActiveResource::Base is the main class for mapping RESTful resources as models in a Rails application.
@@ -1852,6 +1853,9 @@ module ActiveResource
     include ActiveModel::Serializers::Xml
     include ActiveResource::Reflection
     include ActiveResource::Finder
+    include ActiveModel::AttributeMethods
+    public :_read_attribute
+    include ActiveResource::Inheritance
   end
 
   ActiveSupport.run_load_hooks(:active_resource, Base)
