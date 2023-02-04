@@ -19,6 +19,9 @@ ActiveSupport::TestCase.test_order = :random if ActiveSupport::TestCase.respond_
 ActiveResource::Base.logger = ActiveSupport::Logger.new("#{File.dirname(__FILE__)}/debug.log")
 ActiveResource::Base.include_root_in_json = true
 
+# require "minitest/reporters"
+# Minitest::Reporters.use! [Minitest::Reporters::SpecReporter.new(location: true)]
+
 def setup_response
   matz_hash = { "person" => { id: 1, name: "Matz" } }
 

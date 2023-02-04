@@ -19,6 +19,7 @@ require "mocha/minitest"
 
 class BaseTest < ActiveSupport::TestCase
   def setup
+    load "fixtures/beast.rb" # I don't know why BeastResource site path changed
     setup_response # find me in abstract_unit
     @original_person_site = Person.site
     @original_person_proxy = Person.proxy

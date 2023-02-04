@@ -16,6 +16,7 @@ gem "rubocop-performance"
 gem "rubocop-rails"
 
 gem "minitest-bisect"
+gem "minitest-reporters"
 
 gemspec
 
