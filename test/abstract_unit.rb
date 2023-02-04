@@ -14,6 +14,7 @@ require "active_support/test_case"
 require "setter_trap"
 require "active_support/logger"
 require "mocha/minitest"
+require 'test_helper'
 
 ActiveSupport::TestCase.test_order = :random if ActiveSupport::TestCase.respond_to?(:test_order=)
 ActiveResource::Base.logger = ActiveSupport::Logger.new("#{File.dirname(__FILE__)}/debug.log")

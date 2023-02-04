@@ -12,3 +12,4 @@ debug.log
 /*/doc
 /*/test/tmp
 /RDOC_MAIN.rdoc
+/test/dummy/log/*.log

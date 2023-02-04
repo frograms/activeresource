@@ -5,9 +5,9 @@ source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}" }
 
 branch = ENV.fetch("BRANCH", "main")
-gem "activesupport", github: "rails/rails", branch: branch
-gem "activemodel", github: "rails/rails", branch: branch
-gem "activejob", github: "rails/rails", branch: branch
+gem "activesupport"
+gem "activemodel"
+gem "activejob"
 
 gem "rubocop"
 gem "rubocop-minitest"
@@ -26,7 +26,11 @@ platform :mri do
   end
 end
 
-gem 'pry'
-gem 'pry-byebug'
-gem 'pry-stack_explorer'
-gem 'mocha'
+group :test do
+  gem 'pry'
+  gem 'pry-byebug'
+  gem 'pry-stack_explorer'
+  gem 'mocha'
+  gem 'rails'
+  gem 'mysql2'
+end
