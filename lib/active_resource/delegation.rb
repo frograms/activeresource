@@ -7,7 +7,7 @@ module ActiveResource
 
     delegate :each, :each_with_index, :[], :size, to: :to_a
 
-    def initialize(resource, options = {})
+    def initialize(resource, *args, **options)
       @resource = resource
       @options = options
       @options[:params] ||= {}
