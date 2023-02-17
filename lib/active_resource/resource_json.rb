@@ -52,6 +52,10 @@ module ActiveResource
       self.class.allow_resource_json?(mtd)
     end
 
+    def call_resource_json(mtd)
+      send(self.class.resource_method_name(mtd))
+    end
+
     def resource_json(options = nil)
       root = if options && options.key?(:root)
         options[:root]
