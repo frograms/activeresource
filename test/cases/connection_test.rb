@@ -118,7 +118,7 @@ class ConnectionTest < ActiveSupport::TestCase
   def test_should_return_allowed_methods_for_method_no_allowed_exception
     handle_response ResponseHeaderStub.new(405, "HTTP Failed...", "GET, POST")
   rescue ActiveResource::MethodNotAllowed => e
-    assert_equal "Failed.  Response code = 405.  Response message = HTTP Failed....", e.message
+    assert_equal "Response code = 405\nResponse message = HTTP Failed...", e.message
     assert_equal [:get, :post], e.allowed_methods
   end
 

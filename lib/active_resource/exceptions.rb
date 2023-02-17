@@ -24,7 +24,11 @@ module ActiveResource
       end
       if decoder && @response.body.present?
         @response_body = decoder.decode_as_it_is(@response.body)
-        @response_body = @response_body.with_indifferent_access if @response_body.is_a?(Hash)
+        if @response_body.is_a?(Hash)
+          @response_body = @response_body.with_indifferent_access
+          @message ||= @response_body['message'] if @response_body['message'].present?
+          @message ||= @response_body.dig('error', 'message') if @response_body.dig('error', 'message').present?
+        end
       end
     end
 
@@ -36,12 +40,11 @@ module ActiveResource
     end
 
     def to_s
-      return @message if @message
-
-      message = +"Failed."
-      message << "  Response code = #{response.code}." if response.respond_to?(:code)
-      message << "  Response message = #{response.message}." if response.respond_to?(:message)
-      message
+      message = []
+      message << @message if @message
+      message << "Response code = #{response.code}" if response.respond_to?(:code)
+      message << "Response message = #{response.message}" if response.respond_to?(:message)
+      message.join("\n")
     end
 
     def to_hash
