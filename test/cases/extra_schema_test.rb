@@ -33,4 +33,14 @@ class ExtraSchemaTest < ActiveSupport::TestCase
     assert p.extra.has_key?(:desc) == false
     assert p.desc == "make a nuke"
   end
+
+  def test_reload
+    Project.schema do
+      string :desc, extra: {default_request: false}
+    end
+    p = Project.find(11)
+    p.reload(extra: %w[desc])
+    assert p.extra.has_key?(:desc)
+    assert p.extra['desc'] == "make a nuke"
+  end
 end
