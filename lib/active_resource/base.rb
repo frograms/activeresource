@@ -1133,6 +1133,11 @@ module ActiveResource
           nil
         end
 
+        def parse_collection(response)
+          res = format.decode(response.body)
+          instantiate_collection(res)
+        end
+
         # Find a single resource from a one-off URL
         def find_one(options)
           case from = options[:from]
