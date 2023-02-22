@@ -67,9 +67,11 @@ module ActiveResource
           ActiveResource.define_singleton_method(:api_type_name_object_map) { ApiTypeNameObjectMap }
           result = if block_given?
             yield(method, path, params, headers, payload)
-          else
+          elsif method == :post
             headers['CONTENT_TYPE'] = 'application/json'
             send(method, path, params: params.to_json, headers: headers)
+          else
+            send(method, path, params: params, headers: headers)
           end
           ActiveResource.define_singleton_method(:api_type_name_object_map) { TestHelper::TestClientMap }
           response
