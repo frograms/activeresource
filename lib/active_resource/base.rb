@@ -1861,6 +1861,7 @@ module ActiveResource
     include ActiveModel::AttributeMethods
     public :_read_attribute
     include ActiveResource::Inheritance
+    include ActiveResource::ApiTypeName
   end
 
   ActiveSupport.run_load_hooks(:active_resource, Base)

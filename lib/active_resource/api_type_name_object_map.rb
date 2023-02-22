@@ -88,4 +88,22 @@ module ActiveResource
       end
     end
   end
+
+  module ApiTypeName
+    extend ActiveSupport::Concern
+
+    class_methods do
+      def api_type_name
+        ActiveResource::ApiTypeNameObjectMap.find_api_type_name(self)
+      end
+    end
+
+    def api_type_name
+      self.class.api_type_name
+    end
+  end
+
+  ActiveSupport.on_load(:active_record) do
+    include ActiveResource::ApiTypeName
+  end
 end
