@@ -22,7 +22,13 @@ class ExtraSchemaTest < ActiveSupport::TestCase
       string :desc, extra: true
     end
     p = Project.find(11)
-    assert p.desc, "make a nuke"
+    assert_equal p.desc, "make a nuke"
+    p1 = Project.new(desc: 'bomb')
+    assert_equal p1.desc, 'bomb'
+    assert_equal p1.extra['desc'], 'bomb'
+    p1.desc = 'dismantling'
+    assert_equal p1.desc, 'dismantling'
+    assert_equal p1.extra['desc'], 'dismantling'
   end
 
   def test_extra_without_default_request

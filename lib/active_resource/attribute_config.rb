@@ -104,6 +104,9 @@ module ActiveResource
           extra[attr_name]
         end
       end
+      model.define_method("#{attr_name}=") do |value|
+        extra[attr_name] = value
+      end
     end
   end
 

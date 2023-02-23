@@ -394,13 +394,17 @@ module ActiveResource
       # j.weight              # => '65' # still a string!
       #
       def schema(&block)
-        if block_given?
-          @schema ||= Schema.new(self)
-          @schema.instance_eval(&block)
-          @schema
-        else
-          @schema ||= Schema.new(self)
+        unless @schema
+          @schema = superclass.schema&.dup if superclass < ActiveResource::Base
+          if @schema
+            @schema.instance_variable_set(:@model, self)
+          else
+            @schema = Schema.new(self)
+          end
         end
+
+        @schema.instance_eval(&block) if block_given?
+        @schema
       end
 
       # Alternative, direct way to specify a <tt>schema</tt> for this
