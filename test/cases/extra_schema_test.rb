@@ -8,13 +8,10 @@ require "active_support/core_ext/hash/conversions"
 require "mocha/minitest"
 
 class ExtraSchemaTest < ActiveSupport::TestCase
-  def setup
-    setup_response # find me in abstract_unit
-  end
-
-  def teardown
+  setup do
     Object.send(:remove_const, :Project)
     load("fixtures/project.rb")
+    setup_response # find me in abstract_unit
   end
 
   def test_extra

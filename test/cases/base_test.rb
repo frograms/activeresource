@@ -19,6 +19,7 @@ require "mocha/minitest"
 
 class BaseTest < ActiveSupport::TestCase
   def setup
+    Person._headers = {}
     load "fixtures/beast.rb" # I don't know why BeastResource site path changed
     setup_response # find me in abstract_unit
     @original_person_site = Person.site
@@ -679,7 +680,7 @@ class BaseTest < ActiveSupport::TestCase
     apple = Class.new(fruit)
     fruit.site = "http://market"
 
-    fruit.headers["key"] = "value"
+    fruit._headers["key"] = "value"
     assert_equal "value", apple.headers["key"]
   end
 
@@ -688,11 +689,11 @@ class BaseTest < ActiveSupport::TestCase
     apple = Class.new(fruit)
     fruit.site = "http://market"
 
-    fruit.headers["key"] = "value"
+    fruit._headers["key"] = "value"
     assert_equal "value", apple.headers["key"]
 
-    apple.headers["key2"] = "value2"
-    fruit.headers["key3"] = "value3"
+    apple._headers["key2"] = "value2"
+    fruit._headers["key3"] = "value3"
 
     assert_equal "value", apple.headers["key"]
     assert_equal "value2", apple.headers["key2"]
@@ -717,10 +718,10 @@ class BaseTest < ActiveSupport::TestCase
     apple = Class.new(fruit)
     fruit.site = "http://market"
 
-    fruit.headers["key"] = "fruit-value"
+    fruit._headers["key"] = "fruit-value"
     assert_equal "fruit-value", apple.headers["key"]
 
-    apple.headers["key"] = "apple-value"
+    apple._headers["key"] = "apple-value"
     assert_equal "apple-value", apple.headers["key"]
     assert_equal "fruit-value", fruit.headers["key"]
   end
@@ -731,10 +732,10 @@ class BaseTest < ActiveSupport::TestCase
     apple = Class.new(fruit)
     fruit.site = "http://market"
 
-    fruit.headers["key"] = "value"
+    fruit._headers["key"] = "value"
     assert_equal "value", apple.headers["key"]
 
-    fruit.headers["key"] = "new-value"
+    fruit._headers["key"] = "new-value"
     assert_equal "new-value", apple.headers["key"]
   end
 
@@ -745,7 +746,7 @@ class BaseTest < ActiveSupport::TestCase
       fruit.site = "http://market"
       assert_equal "http://market", fruit.site.to_s
 
-      fruit.headers["key"] = "value"
+      fruit._headers["key"] = "value"
       assert_equal "value", fruit.headers["key"]
     end.join
 
@@ -931,14 +932,14 @@ class BaseTest < ActiveSupport::TestCase
   end
 
   def test_custom_header
-    Person.headers["key"] = "value"
+    Person._headers["key"] = "value"
     assert_raise(ActiveResource::ResourceNotFound) { Person.find(4) }
   ensure
-    Person.headers.delete("key")
+    Person._headers.delete("key")
   end
 
   def test_build_with_custom_header
-    Person.headers["key"] = "value"
+    Person._headers["key"] = "value"
     ActiveResource::HttpMock.respond_to do |mock|
       mock.get "/people/new.json", {}, Person.new.to_json
       mock.get "/people/new.json", { "key" => "value" }, Person.new.to_json, 404
@@ -1276,14 +1277,14 @@ class BaseTest < ActiveSupport::TestCase
   end
 
   def test_delete_with_custom_header
-    Person.headers["key"] = "value"
+    Person._headers["key"] = "value"
     ActiveResource::HttpMock.respond_to do |mock|
       mock.delete "/people/1.json", {}, nil, 200
       mock.delete "/people/1.json", { "key" => "value" }, nil, 404
     end
     assert_raise(ActiveResource::ResourceNotFound) { Person.delete(1) }
   ensure
-    Person.headers.delete("key")
+    Person._headers.delete("key")
   end
 
   ########################################################################

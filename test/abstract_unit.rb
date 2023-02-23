@@ -113,6 +113,7 @@ def setup_response
     mock.get    "/people/2.xml",                {}, @david
     mock.get    "/people/Greg.json",            {}, @greg
     mock.get    "/people/6.json",               {}, @joe
+    mock.get    "/people/4.json",               { "Accept" => "application/json" }, nil, 404
     mock.get    "/people/4.json",               { "key" => "value" }, nil, 404
     mock.put    "/people/1.json",               {}, nil, 204
     mock.delete "/people/1.json",               {}, nil, 200

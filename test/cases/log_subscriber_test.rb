@@ -11,6 +11,7 @@ class LogSubscriberTest < ActiveSupport::TestCase
 
   def setup
     super
+    Person._headers = {}
 
     @matz = { person: { id: 1, name: "Matz" } }.to_json
     ActiveResource::HttpMock.respond_to do |mock|

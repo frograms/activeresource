@@ -256,7 +256,7 @@ module ActiveResource
         module_eval <<-EOE, __FILE__, __LINE__ + 1
           def #{method}(path, #{'body, ' if has_body}headers)
             request = ActiveResource::Request.new(:#{method}, path, #{has_body ? 'body, ' : 'nil, '}headers)
-            request.headers.delete(:expect_result_type)
+            request.headers.delete('expect_result_type')
             self.class.requests << request
             if response = self.class.responses.assoc(request)
               response[1]

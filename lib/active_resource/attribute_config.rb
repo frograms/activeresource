@@ -55,57 +55,56 @@ module ActiveResource
       if model.method_defined?(attr_name) || model.method_defined?("#{attr_name}=")
         raise AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
       end
-      attr_name = self.attr_name
-      options = self.options
+      __attr_config__ = self
 
       if options.has_key?(:default)
         if options[:default].is_a?(Proc)
           model.define_method(attr_name) do
-            attributes[attr_name] || options[:default].call(self)
+            attributes[__attr_config__.attr_name] || __attr_config__.options[:default].call(self)
           end
         else
           model.define_method(attr_name) do
-            attributes[attr_name] || options[:default]
+            attributes[__attr_config__.attr_name] || __attr_config__.options[:default]
           end
         end
       else
         model.define_method(attr_name) do
-          attributes[attr_name]
+          attributes[__attr_config__.attr_name]
         end
       end
       model.define_method("#{attr_name}=") do |value|
-        attributes[attr_name] = value
+        attributes[__attr_config__.attr_name] = value
       end
     end
 
     def define_extra_accessor_in_model
       return if options[:skip_define_accessor]
       if model.method_defined?(attr_name) || model.method_defined?("#{attr_name}=")
-        raise AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
+        binding.pry
+        raise ActiveResource::Schema::AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
       end
-      attr_name = self.attr_name
-      options = self.options
+      __attr_config__ = self
 
       if options.has_key?(:default)
         if options[:default].is_a?(Proc)
           model.define_method(attr_name) do
-            reload(extra: attr_name) unless extra.has_key?(attr_name)
-            extra[attr_name] || options[:default].call(self)
+            reload(extra: __attr_config__.attr_name) unless extra.has_key?(__attr_config__.attr_name)
+            extra[__attr_config__.attr_name] || __attr_config__.options[:default].call(self)
           end
         else
           model.define_method(attr_name) do
-            reload(extra: attr_name) unless extra.has_key?(attr_name)
-            extra[attr_name] || options[:default]
+            reload(extra: __attr_config__.attr_name) unless extra.has_key?(__attr_config__.attr_name)
+            extra[__attr_config__.attr_name] || __attr_config__.options[:default]
           end
         end
       else
         model.define_method(attr_name) do
-          reload(extra: attr_name) unless extra.has_key?(attr_name)
-          extra[attr_name]
+          reload(extra: __attr_config__.attr_name) unless extra.has_key?(__attr_config__.attr_name)
+          extra[__attr_config__.attr_name]
         end
       end
       model.define_method("#{attr_name}=") do |value|
-        extra[attr_name] = value
+        extra[__attr_config__.attr_name] = value
       end
     end
   end

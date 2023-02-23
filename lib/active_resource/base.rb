@@ -680,14 +680,21 @@ module ActiveResource
         end
       end
 
-      attr_writer :headers
+      alias_method :__headers, :_headers
+      def _headers
+        self._headers = {}.with_indifferent_access if __headers.nil?
+        self.__headers
+      end
+
+      def headers_base
+        merged = {}.with_indifferent_access
+        merged.update(superclass.headers_base) if superclass.respond_to?(:headers_base)
+        merged.update(self._headers) if self._headers
+        merged
+      end
 
       def headers
-        self._headers ||= if superclass != Object
-          InheritingHash.new(superclass.headers)
-        else
-          InheritingHash.new({})
-        end
+        headers_base
       end
 
       attr_writer :element_name
