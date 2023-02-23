@@ -42,7 +42,9 @@ def setup_response
   @comments = [{ id: 1, post_id: 1, content: "Interesting post" }, { id: 2, post_id: 1, content: "I agree" }].to_json
   @pets = [{ id: 1, name: "Max" }, { id: 2, name: "Daisy" }].to_json
   @posts3 = (JSON.parse(@posts) + [{id: 3, title: "number 3", body: "sky is yellow"}]).to_json
-  @project = {id: 11, email: "nuke@manhattan.proj", name: "Manhattan", desc: "make a nuke"}.to_json
+  @project_h = {id: 11, email: "nuke@manhattan.proj", name: "Manhattan", desc: "make a nuke"}
+  @project = @project_h.to_json
+  @project_due = @project_h.merge(due: Time.at(1677120000)).to_json
 
   # - deep nested resource -
   # - Luis (Customer)
@@ -158,6 +160,7 @@ def setup_response
     # projects
     mock.get "/projects/11.json?__extra__%5B%5D=desc", {}, @project
     mock.get "/projects/11.json", {}, JSON.parse(@project).except('desc').to_json
+    mock.get "/projects/11.json?__extra__%5B%5D=desc&__extra__%5B%5D=due", {}, @project_due
   end
 
   Person.user = nil

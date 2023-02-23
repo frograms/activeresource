@@ -1615,6 +1615,13 @@ module ActiveResource
       self
     end
 
+    def load_extra
+      not_defaults = schema.extra.select{|key, attr| !attr.options[:extra][:default_request]}
+      if (not_loaded = not_defaults.keys - extra.keys) && not_loaded.present?
+        reload(extra: not_loaded)
+      end
+    end
+
     # Updates a single attribute and then saves the object.
     #
     # Note: <tt>Unlike ActiveRecord::Base.update_attribute</tt>, this method <b>is</b>

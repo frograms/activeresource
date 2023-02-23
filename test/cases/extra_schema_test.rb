@@ -49,4 +49,16 @@ class ExtraSchemaTest < ActiveSupport::TestCase
     assert p.extra.has_key?(:desc)
     assert p.extra['desc'] == "make a nuke"
   end
+
+  def test_load_extra
+    Project.schema do
+      string :desc, extra: true
+      datetime :due, extra: {default_request: false}
+    end
+    p = Project.find(11)
+    assert_equal p.desc, 'make a nuke'
+    assert !p.extra.key?('due')
+    p.load_extra
+    assert_equal p.due, Time.parse('2023-02-23 02:40:00 +0000')
+  end
 end
