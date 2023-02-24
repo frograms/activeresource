@@ -10,6 +10,10 @@ module ActiveResource
       end
     end
 
+    def inspect
+      "#<AttributeConfig #{@name} #{@attr_name} #{@options.inspect}>"
+    end
+
     def set_load_proc(&block)
       @load_proc = block
     end
@@ -53,7 +57,9 @@ module ActiveResource
     def define_accessor_in_model
       return if options[:skip_define_accessor]
       if model.method_defined?(attr_name) || model.method_defined?("#{attr_name}=")
-        raise AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
+        if model.instance_method(attr_name).owner == model
+          raise AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
+        end
       end
       __attr_config__ = self
 
@@ -123,7 +129,7 @@ module ActiveResource
 
     def validate!(value)
       unless allowed_values.include?(value.strip)
-        raise InvalidValue, "`model: #{model.name}` `attribute: #{name}` value #{value} is not in #{allowed_values}"
+        raise InvalidValue, "Not allowed enum value: `model: #{model.name}` `attribute: #{attr_name}` value #{value} is not in #{allowed_values}"
       end
     end
 

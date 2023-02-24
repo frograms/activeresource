@@ -76,6 +76,7 @@ module ActiveResource # :nodoc:
 
     # An array of attribute definitions, representing the attributes that
     # have been defined.
+    attr_reader :model
     attr_accessor :attrs, :extra
     attr_accessor :attrs_by_server_name, :extra_by_server_name
 
@@ -102,8 +103,18 @@ module ActiveResource # :nodoc:
 
       @attrs.each { |k, v| attribute(k, v) }
       unless @attrs.key?(@model.primary_key)
-        attribute(@model.primary_key, 'integer', skip_define_accessor: true)
+        _attribute(@model.primary_key, 'integer', skip_define_accessor: true)
       end
+    end
+
+    def deep_dup(model)
+      sch = dup
+      sch.instance_variable_set(:@model, model)
+      sch.instance_variable_set(:@attrs, @attrs.deep_dup)
+      sch.instance_variable_set(:@extra, @extra.deep_dup)
+      sch.instance_variable_set(:@attrs_by_server_name, @attrs_by_server_name.deep_dup)
+      sch.instance_variable_set(:@extra_by_server_name, @extra_by_server_name.deep_dup)
+      sch
     end
 
     # { 'name' => 'string', 'age' => 'integer' }
@@ -119,6 +130,10 @@ module ActiveResource # :nodoc:
       @extra.keys
     end
 
+    def extra_not_defaults
+      @extra.select{|k, v| !v.options.dig(:extra, :default_request)}
+    end
+
     def extra_attribute_config_by_server_name(key)
       @extra_by_server_name[key]
     end
@@ -127,12 +142,11 @@ module ActiveResource # :nodoc:
       @server_attribute_names ||= @attrs.values.map{|attribute_config| attribute_config.server_name.to_s}
     end
 
-    def attribute(name, type, options = {})
+    def _attribute(name, type, options = {})
       raise ArgumentError, "Unknown Attribute type: #{type.inspect} for key: #{name.inspect}" unless type.nil? || Schema.known_attribute_types.include?(type.to_s)
 
       if options[:extra]
-        extra_attribute(name, type, options)
-        return self
+        return extra_attribute(name, type, options)
       end
 
       attribute_config = self.class.attribute_config(type)
@@ -143,7 +157,13 @@ module ActiveResource # :nodoc:
       self
     end
 
-    def extra_attribute(name, type, options = {})
+    def attribute(name, type, options = {})
+      _attribute(name, type, options)
+      model.subclasses.map{|sub_model| sub_model._schema.attribute(name, type, options)}
+      self
+    end
+
+    def _extra_attribute(name, type, options = {})
       raise ArgumentError, "Unknown Attribute type: #{type.inspect} for key: #{name.inspect}" unless type.nil? || Schema.known_attribute_types.include?(type.to_s)
 
       attribute_config = self.class.attribute_config(type)
@@ -151,6 +171,13 @@ module ActiveResource # :nodoc:
       @extra[name.to_s] = attribute_config
       @extra_by_server_name[attribute_config.server_name] = attribute_config
       attribute_config.define_extra_accessor_in_model
+      self
+    end
+
+    def extra_attribute(name, type, options = {})
+      _extra_attribute(name, type, options)
+      model.subclasses.map{|sub_model| sub_model._schema.extra_attribute(name, type, options)}
+      self
     end
 
     # The following are the attribute types supported by Active Resource

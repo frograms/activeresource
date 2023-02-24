@@ -71,11 +71,16 @@ module ActiveResource
         ext_configs = self.schema.extra.select{|k, v| v.options.dig(:extra, :default_request)}.values
         exts = ext_configs.map{|cfg| cfg.server_name}
 
-        Array.wrap(params.delete(:extra)).each do |e|
-          if (e_config = self.schema.extra[e])
-            exts << e_config.server_name.to_s
-          else
-            exts << e.to_s
+        param_extra = Array.wrap(params.delete(:extra))
+        if param_extra.include?(true)
+          exts += self.schema.extra_not_defaults.values.map{|cfg| cfg.server_name}
+        else
+          param_extra.each do |e|
+            if (e_config = self.schema.extra[e])
+              exts << e_config.server_name.to_s
+            else
+              exts << e.to_s
+            end
           end
         end
         params[:__extra__] = exts.compact.uniq

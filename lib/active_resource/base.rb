@@ -392,19 +392,17 @@ module ActiveResource
       # ie:
       # j.age                 # => 34   # cast to an integer
       # j.weight              # => '65' # still a string!
-      #
-      def schema(&block)
-        unless @schema
-          @schema = superclass.schema&.dup if superclass < ActiveResource::Base
-          if @schema
-            @schema.instance_variable_set(:@model, self)
-          else
-            @schema = Schema.new(self)
-          end
+      def _schema
+        @_schema ||= begin
+          _sch = superclass._schema&.deep_dup(self) if superclass < ActiveResource::Base
+          _sch ||= Schema.new(self)
+          _sch
         end
+      end
 
-        @schema.instance_eval(&block) if block_given?
-        @schema
+      def schema(&block)
+        _schema.instance_eval(&block) if block_given?
+        _schema
       end
 
       # Alternative, direct way to specify a <tt>schema</tt> for this
@@ -428,7 +426,7 @@ module ActiveResource
         the_schema = the_schema.attrs if the_schema.kind_of?(Schema)
         the_schema = {} if the_schema.nil?
         raise ArgumentError, "Expected a hash" unless the_schema.kind_of? Hash
-        @schema = Schema.new(self, attrs: the_schema)
+        @_schema = Schema.new(self, attrs: the_schema)
       end
 
       # Returns the list of known attributes for this resource, gathered
