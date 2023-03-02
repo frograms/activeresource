@@ -42,7 +42,8 @@ module ActiveResource
       end
 
       def allow_resource_json?(mtd)
-        instance_methods.include?(resource_method_name(mtd))
+        mtd2 = resource_method_name(mtd)
+        instance_methods.include?(mtd2) ? mtd2 : nil
       end
     end
 
