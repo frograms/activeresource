@@ -27,7 +27,7 @@ module ActiveResource
         if @response_body.is_a?(Hash)
           @response_body = @response_body.with_indifferent_access
           @message ||= @response_body['message'] if @response_body['message'].present?
-          @message ||= @response_body.dig('error', 'message') if @response_body.dig('error', 'message').present?
+          @message ||= @response_body.dig('error', 'message') if @response_body['error'].is_a?(Hash) && @response_body.dig('error', 'message').present?
         end
       end
     end
