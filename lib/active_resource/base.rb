@@ -1143,7 +1143,7 @@ module ActiveResource
         end
 
         def parse_collection(response)
-          res = format.decode(response.body)
+          res = response.respond_to?(:body) ? format.decode(response.body) : response
           instantiate_collection(res)
         end
 
