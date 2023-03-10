@@ -15,9 +15,15 @@ class ExtraSchemaTest < ActiveSupport::TestCase
   def teardown
   end
 
-  def test_headers
+  def test_headers1
     assert_equal Animal.headers, {kingdom: 'animal'}.with_indifferent_access
-    assert_equal Mammal.headers, {kingdom: 'animal', phylum: 'mammal'}.with_indifferent_access
+  end
+
+  def test_headers2
+    assert_equal Mammal.headers, {kingdom: 'animal', phylum: 'mammal', class: 'unknown'}.with_indifferent_access
+  end
+
+  def test_headers3
     assert_equal Dog.headers, {kingdom: 'animal', phylum: 'mammal2', class: 'dog'}.with_indifferent_access
   end
 end

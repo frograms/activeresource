@@ -686,13 +686,14 @@ module ActiveResource
 
       def headers_base
         merged = {}.with_indifferent_access
-        merged.update(superclass.headers_base) if superclass.respond_to?(:headers_base)
-        merged.update(self._headers) if self._headers
+        merged.update(superclass.headers) if superclass.respond_to?(:headers)
         merged
       end
 
       def headers
-        headers_base
+        merged = headers_base
+        merged.update(self._headers) if self._headers
+        merged
       end
 
       attr_writer :element_name

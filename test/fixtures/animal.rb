@@ -4,6 +4,12 @@ end
 
 class Mammal < Animal
   self._headers = {phylum: 'mammal'}
+
+  def self.headers_base
+    h = super
+    h.update(class: 'unknown')
+    h
+  end
 end
 
 class Dog < Mammal
