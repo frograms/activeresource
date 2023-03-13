@@ -67,7 +67,11 @@ module ActiveResource
       #
       # <tt>has_many :clients</tt> returns <tt>'Client'</tt>
       def class_name(resource: nil)
-        @class_name ||= derive_class_name(resource: resource)
+        if options[:polymorphic] == true
+          resource.send(foreign_type)
+        else
+          @class_name ||= derive_class_name(resource: resource)
+        end
       end
 
       # Returns the foreign_key for the macro.
@@ -87,8 +91,6 @@ module ActiveResource
         def derive_class_name(resource: nil)
           if options[:class_name]
             options[:class_name].to_s.camelize
-          elsif options[:polymorphic] == true
-            resource.send(foreign_type)
           else
             name.to_s.classify
           end

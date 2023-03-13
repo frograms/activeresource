@@ -41,4 +41,13 @@ class ActiveResource::Associations::Builder::BelongsToTest < ActiveSupport::Test
       @klass.build(Person, :customer, soo_invalid: true)
     end
   end
+
+  def test_polymorphic
+    object = @klass.new(Person, :customer, polymorphic: true)
+    reflection = object.build
+    resource1 = Person.new(customer_type: 'Beast', customer_id: 111)
+    assert_equal 'Beast', reflection.class_name(resource: resource1)
+    resource2 = Person.new(customer_type: 'Person', customer_id: 112)
+    assert_equal 'Person', reflection.class_name(resource: resource2)
+  end
 end
