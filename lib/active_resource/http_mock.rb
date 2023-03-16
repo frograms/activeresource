@@ -2,6 +2,7 @@
 
 require "active_support/core_ext/kernel/reporting"
 require "active_support/core_ext/object/inclusion"
+require "ostruct"
 
 module ActiveResource
   class InvalidRequestError < StandardError; end # :nodoc:
@@ -254,8 +255,10 @@ module ActiveResource
         #   end
         # end
         module_eval <<-EOE, __FILE__, __LINE__ + 1
-          def #{method}(path, #{'body, ' if has_body}headers)
-            request = ActiveResource::Request.new(:#{method}, path, #{has_body ? 'body, ' : 'nil, '}headers)
+          def #{method}(path)
+            req = OpenStruct.new
+            yield(req)
+            request = ActiveResource::Request.new(:#{method}, path, #{has_body ? 'req.body, ' : 'nil, '}req.headers)
             request.headers.delete('expect_result_type')
             self.class.requests << request
             if response = self.class.responses.assoc(request)

@@ -1342,9 +1342,9 @@ class BaseTest < ActiveSupport::TestCase
   end
 
   def test_exists_without_http_mock
-    http = Net::HTTP.new(Person.site.host, Person.site.port)
+    http = Faraday.new(url: Person.site)
     ActiveResource::Connection.any_instance.expects(:http).returns(http)
-    http.expects(:request).returns(ActiveResource::Response.new(""))
+    http.expects(:run_request).returns(ActiveResource::Response.new(""))
 
     assert Person.exists?("not-mocked")
   end

@@ -195,9 +195,14 @@ class HttpMockTest < ActiveSupport::TestCase
 
   def request(method, path, headers = {}, body = nil)
     if method.in?([:patch, :put, :post])
-      @http.send(method, path, body, headers)
+      @http.send(method, path) do |req|
+        req.headers = headers
+        req.body = body
+      end
     else
-      @http.send(method, path, headers)
+      @http.send(method, path) do |req|
+        req.headers = headers
+      end
     end
   end
 end

@@ -6,6 +6,7 @@ require "net/https"
 require "date"
 require "time"
 require "uri"
+require "faraday"
 
 module ActiveResource
   # Class to handle connections to remote web services.
@@ -85,52 +86,55 @@ module ActiveResource
     # Executes a GET request.
     # Used to get (find) resources.
     def get(path, headers = {})
-      with_auth { request(:get, path, build_request_headers(headers, :get, self.site.merge(path))) }
+      with_auth { request(:get, path, headers: build_request_headers(headers, :get, self.site.merge(path))) }
     end
 
     # Executes a DELETE request (see HTTP protocol documentation if unfamiliar).
     # Used to delete resources.
     def delete(path, headers = {})
-      with_auth { request(:delete, path, build_request_headers(headers, :delete, self.site.merge(path))) }
+      with_auth { request(:delete, path, headers: build_request_headers(headers, :delete, self.site.merge(path))) }
     end
 
     # Executes a PATCH request (see HTTP protocol documentation if unfamiliar).
     # Used to update resources.
     def patch(path, body = "", headers = {})
-      with_auth { request(:patch, path, body.to_s, build_request_headers(headers, :patch, self.site.merge(path))) }
+      with_auth { request(:patch, path, body: body.to_s, headers: build_request_headers(headers, :patch, self.site.merge(path))) }
     end
 
     # Executes a PUT request (see HTTP protocol documentation if unfamiliar).
     # Used to update resources.
     def put(path, body = "", headers = {})
-      with_auth { request(:put, path, body.to_s, build_request_headers(headers, :put, self.site.merge(path))) }
+      with_auth { request(:put, path, body: body.to_s, headers: build_request_headers(headers, :put, self.site.merge(path))) }
     end
 
     # Executes a POST request.
     # Used to create new resources.
     def post(path, body = "", headers = {})
-      with_auth { request(:post, path, body.to_s, build_request_headers(headers, :post, self.site.merge(path))) }
+      with_auth { request(:post, path, body: body.to_s, headers: build_request_headers(headers, :post, self.site.merge(path))) }
     end
 
     # Executes a HEAD request.
     # Used to obtain meta-information about resources, such as whether they exist and their size (via response headers).
     def head(path, headers = {})
-      with_auth { request(:head, path, build_request_headers(headers, :head, self.site.merge(path))) }
+      with_auth { request(:head, path, headers: build_request_headers(headers, :head, self.site.merge(path))) }
     end
 
     attr_reader :last_result
 
     private
       # Makes a request to the remote service.
-      def request(method, path, *arguments)
+      def request(method, path, headers: {}, body: nil)
         result = ActiveSupport::Notifications.instrument("request.active_resource") do |payload|
           payload[:method]      = method
           payload[:request_uri] = "#{site.scheme}://#{site.host}:#{site.port}#{path}"
-          payload[:result]      = http.send(method, path, *arguments)
+          payload[:result]      = http.send(method, path) do |req|
+            req.headers = headers
+            req.body = body
+          end
         end
         result = self.class.response_wrapper.call(result)
-        @last_result = {request: [method, path, *arguments], response: result}
-        handle_response(result, request_args: [method, path, *arguments])
+        @last_result = {request: [method, path, headers: headers, body: body], response: result}
+        handle_response(result, request_args: [method, path, headers: headers, body: body])
       rescue Timeout::Error => e
         raise TimeoutError.new(e.message)
       rescue OpenSSL::SSL::SSLError => e
@@ -180,12 +184,9 @@ module ActiveResource
       end
 
       def new_http
-        if @proxy
-          user = URI::DEFAULT_PARSER.unescape(@proxy.user) if @proxy.user
-          password = URI::DEFAULT_PARSER.unescape(@proxy.password) if @proxy.password
-          Net::HTTP.new(@site.host, @site.port, @proxy.host, @proxy.port, user, password)
-        else
-          Net::HTTP.new(@site.host, @site.port)
+        Faraday.new(url: @site) do |con|
+          con.request :url_encoded # default middleware
+          con.proxy = @proxy if @proxy
         end
       end
 
@@ -193,11 +194,11 @@ module ActiveResource
         apply_ssl_options(http).tap do |https|
           # Net::HTTP timeouts default to 60 seconds.
           if defined? @timeout
-            https.open_timeout = @timeout
-            https.read_timeout = @timeout
+            https.options[:open_timeout] = @timeout
+            https.options[:read_timeout] = @timeout
           end
-          https.open_timeout = @open_timeout if defined?(@open_timeout)
-          https.read_timeout = @read_timeout if defined?(@read_timeout)
+          https.options[:open_timeout] = @open_timeout if defined?(@open_timeout)
+          https.options[:read_timeout] = @read_timeout if defined?(@read_timeout)
         end
       end
 
@@ -205,10 +206,10 @@ module ActiveResource
         http.tap do |https|
           # Skip config if site is already a https:// URI.
           if defined? @ssl_options
-            http.use_ssl = true
+            http.ssl.verify = true
 
             # All the SSL options have corresponding http settings.
-            @ssl_options.each { |key, value| http.send "#{key}=", value }
+            @ssl_options.each { |key, value| http.ssl[key] = value }
           end
         end
       end

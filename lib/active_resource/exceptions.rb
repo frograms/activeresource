@@ -17,7 +17,9 @@ module ActiveResource
       @request = {}.with_indifferent_access
       @request[:method] = request_args[0]
       @request[:path] = request_args[1]
-      @request[:arguments] = request_args[2..-1] || []
+      request_opts = request_args.extract_options!
+      @request[:headers] = request_opts[:headers] || {}
+      @request[:body] = request_opts[:body]
       if @request[:path]
         uri = URI.parse(@request[:path])
         @request[:format] = uri.path.scan(/.*\.(json|xml)$/).flatten[0]

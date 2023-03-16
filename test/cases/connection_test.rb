@@ -158,12 +158,12 @@ class ConnectionTest < ActiveSupport::TestCase
     proxy = URI.parse("http://#{encoded_user}:#{encoded_password}@proxy.local:4242")
 
     assert_nothing_raised { @conn.proxy = "http://#{encoded_user}:#{encoded_password}@proxy.local:4242" }
-    assert_equal user, @conn.send(:new_http).proxy_user
-    assert_equal password, @conn.send(:new_http).proxy_pass
+    assert_equal user, @conn.send(:new_http).proxy.user
+    assert_equal password, @conn.send(:new_http).proxy.password
 
     assert_nothing_raised { @conn.proxy = proxy }
-    assert_equal user, @conn.send(:new_http).proxy_user
-    assert_equal password, @conn.send(:new_http).proxy_pass
+    assert_equal user, @conn.send(:new_http).proxy.user
+    assert_equal password, @conn.send(:new_http).proxy.password
   end
 
   def test_timeout_accessor
@@ -234,20 +234,20 @@ class ConnectionTest < ActiveSupport::TestCase
   end
 
   def test_timeout
-    @http = mock("new Net::HTTP")
+    @http = mock("new Faraday")
     @conn.expects(:http).returns(@http)
     @http.expects(:get).raises(Timeout::Error, "execution expired")
     assert_raise(ActiveResource::TimeoutError) { @conn.get("/people_timeout.json") }
   end
 
   def test_setting_timeout
-    http = Net::HTTP.new("")
+    http = Faraday.new("")
 
     [10, 20].each do |timeout|
       @conn.timeout = timeout
       @conn.send(:configure_http, http)
-      assert_equal timeout, http.open_timeout
-      assert_equal timeout, http.read_timeout
+      assert_equal timeout, http.options.open_timeout
+      assert_equal timeout, http.options.read_timeout
     end
   end
 
@@ -255,28 +255,28 @@ class ConnectionTest < ActiveSupport::TestCase
     @http = mock("new Net::HTTP")
     @conn.expects(:http).returns(@http)
     path = "/people/1.xml"
-    @http.expects(:get).with(path, "Accept" => "application/xhtml+xml").returns(ActiveResource::Response.new(@matz, 200, "Content-Type" => "text/xhtml"))
+    @http.expects(:get).with(path).returns(ActiveResource::Response.new(@matz, 200, "Content-Type" => "text/xhtml"))
     assert_nothing_raised { @conn.get(path, "Accept" => "application/xhtml+xml") }
   end
 
   def test_ssl_options_get_applied_to_http
-    http = Net::HTTP.new("")
+    http = Faraday.new("")
     @conn.site = "https://secure"
     @conn.ssl_options = { verify_mode: OpenSSL::SSL::VERIFY_PEER }
     @conn.send(:configure_http, http)
 
-    assert http.use_ssl?
-    assert_equal http.verify_mode, OpenSSL::SSL::VERIFY_PEER
+    assert http.ssl.verify
+    assert_equal http.ssl.verify_mode, OpenSSL::SSL::VERIFY_PEER
   end
 
   def test_ssl_options_get_applied_to_https_urls_without_explicitly_setting_ssl_options
-    http = Net::HTTP.new("")
+    http = Faraday.new("")
     @conn.site = "https://secure"
-    assert @conn.send(:configure_http, http).use_ssl?
+    assert @conn.send(:configure_http, http).ssl.verify
   end
 
   def test_ssl_error
-    http = Net::HTTP.new("")
+    http = Faraday.new("")
     @conn.expects(:http).returns(http)
     http.expects(:get).raises(OpenSSL::SSL::SSLError, "Expired certificate")
     assert_raise(ActiveResource::SSLError) { @conn.get("/people/1.json") }
@@ -305,7 +305,7 @@ class ConnectionTest < ActiveSupport::TestCase
     @conn.send(:http)
     keep_net_connection_status do
       ActiveResource::HttpMock.enable_net_connection!
-      assert @conn.send(:http).kind_of?(Net::HTTP)
+      assert @conn.send(:http).kind_of?(Faraday::Connection)
     end
   end
 

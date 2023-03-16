@@ -32,6 +32,7 @@ Gem::Specification.new do |s|
   s.add_dependency("activesupport", ">= 6.0")
   s.add_dependency("activemodel", ">= 6.0")
   s.add_dependency("activemodel-serializers-xml", "~> 1.0")
+  s.add_dependency("faraday")
 
   s.add_development_dependency("rake")
   s.add_development_dependency("mocha", ">= 0.13.0")
