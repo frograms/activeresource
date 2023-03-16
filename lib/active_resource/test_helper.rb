@@ -4,7 +4,7 @@ module ActiveResource
 
     class CaptureConnection < Connection
 
-      def request(method, path, *arguments)
+      def request(method, path, headers: {}, body: nil)
         if @grab_request
           result = ActiveSupport::Notifications.instrument("request.active_resource") do |payload|
             payload[:method]      = method
@@ -12,14 +12,9 @@ module ActiveResource
             payload[:connection]  = http
             payload[:method] = method
             payload[:path] = path
-            case method
-            when :get, :delete, :head
-              payload[:headers] = arguments[0]
-            else
-              payload[:body_s] = arguments[0]
-              payload[:body] = format.decode_as_it_is(arguments[0]) if arguments[0].present?
-              payload[:headers] = arguments[1]
-            end
+            payload[:body_s] = body
+            payload[:body] = format.decode_as_it_is(body) if body.present?
+            payload[:headers] = headers
             uri = URI.parse(payload[:request_uri])
             if payload[:body]
               params = payload[:body]
@@ -32,14 +27,14 @@ module ActiveResource
         else
           result = super
         end
-        @last_result = {request: [method, path, *arguments], response: result}
+        @last_result = {request: [method, path, headers: headers, body: body], response: result}
         if result.is_a?(String)
           mock = OpenStruct.new
           mock.body = result
           mock.code = 200
           result = mock
         end
-        handle_response(result, request_args: [method, path, *arguments])
+        handle_response(result, request_args: [method, path, headers: headers, body: body])
       rescue Timeout::Error => e
         raise TimeoutError.new(e.message)
       rescue OpenSSL::SSL::SSLError => e

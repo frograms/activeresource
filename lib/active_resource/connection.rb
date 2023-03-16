@@ -7,6 +7,7 @@ require "date"
 require "time"
 require "uri"
 require "faraday"
+require "active_resource/response_wrapper"
 
 module ActiveResource
   # Class to handle connections to remote web services.
@@ -24,11 +25,9 @@ module ActiveResource
     attr_reader :site, :user, :password, :bearer_token, :auth_type, :timeout, :open_timeout, :read_timeout, :proxy, :ssl_options
     attr_accessor :format, :logger
 
-    class << self
-      def response_wrapper
-        proc{|response| response}
-      end
+    cattr_accessor :response_wrapper, default: proc{|response| ResponseWrapper.new(response)}
 
+    class << self
       def requests
         @@requests ||= []
       end

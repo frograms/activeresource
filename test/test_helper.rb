@@ -8,6 +8,8 @@ require "rails/test_help"
 require "rails/test_unit/reporter"
 Rails::TestUnitReporter.executable = 'bin/test'
 
+ActiveResource::Connection.response_wrapper = proc{|response| response}
+
 # Load fixtures from the engine
 if ActiveSupport::TestCase.respond_to?(:fixture_path=)
   ActiveSupport::TestCase.fixture_path = File.expand_path("fixtures", __dir__)
