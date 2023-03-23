@@ -7,7 +7,7 @@ require "active_support/json"
 require "active_support/core_ext/hash/conversions"
 require "mocha/minitest"
 
-class ExtraSchemaTest < ActiveSupport::TestCase
+class HeaderTest < ActiveSupport::TestCase
   def setup
     setup_response # find me in abstract_unit
   end

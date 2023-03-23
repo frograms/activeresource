@@ -1105,6 +1105,11 @@ module ActiveResource
         false
       end
 
+      def parse_collection(response)
+        res = response.respond_to?(:body) ? format.decode(response.body) : response
+        instantiate_collection(res)
+      end
+
       private
         def check_prefix_options(prefix_options)
           p_options = HashWithIndifferentAccess.new(prefix_options)
@@ -1141,11 +1146,6 @@ module ActiveResource
           # Swallowing ResourceNotFound exceptions and return nil - as per
           # ActiveRecord.
           nil
-        end
-
-        def parse_collection(response)
-          res = response.respond_to?(:body) ? format.decode(response.body) : response
-          instantiate_collection(res)
         end
 
         # Find a single resource from a one-off URL
