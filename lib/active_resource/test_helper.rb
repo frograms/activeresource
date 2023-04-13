@@ -1,40 +1,55 @@
 module ActiveResource
   module TestHelper
     mattr_accessor :client_object_map
+    class ResponseWrapper < ::ActiveResource::ResponseWrapper
+      def code
+        (@response.code rescue nil) || @response.status
+      end
 
-    class CaptureConnection < Connection
+      def body
+        super # for ActiveResource::Base#parse_collection
+      end
+    end
+
+    class CaptureConnection < ::ActiveResource::Connection
+      class << self
+        def response_wrapper
+          proc do |response|
+            ::ActiveResource::TestHelper::ResponseWrapper.new(response)
+          end
+        end
+      end
 
       def request(method, path, headers: {}, body: nil)
         if @grab_request
-          result = ActiveSupport::Notifications.instrument("request.active_resource") do |payload|
+          result = ActiveSupport::Notifications.instrument("request.#{client_name}") do |payload|
             payload[:method]      = method
             payload[:request_uri] = "#{site.scheme}://#{site.host}:#{site.port}#{path}"
-            payload[:connection]  = http
-            payload[:method] = method
-            payload[:path] = path
-            payload[:body_s] = body
-            payload[:body] = format.decode_as_it_is(body) if body.present?
-            payload[:headers] = headers
+            payload[:request_headers] = headers.merge('User-Agent' => client_name)
+            payload[:request_body] = body
+            payload[:request_body_hash] = format.decode_as_it_is(body) if body.present?
             uri = URI.parse(payload[:request_uri])
-            if payload[:body]
-              params = payload[:body]
+            if payload[:request_body_hash]
+              params = payload[:request_body_hash]
             else
               params = Rack::Utils.parse_nested_query(uri.query).with_indifferent_access
             end
-            @grab_request.call(method, uri.path, params, payload[:headers], payload)
+            result = @grab_request.call(method, uri.path, params, payload[:request_headers], payload)
+            if result.is_a?(String)
+              mock = OpenStruct.new
+              mock.body = result
+              mock.code = 200
+              result = mock
+            end
+            result = self.class.response_wrapper.call(result)
+            payload[:result] = result
           end
+          @last_result = {request: [method, path, headers: headers, body: body], response: result}
           @grab_request = nil
+          handle_response(result, request_args: [method, path, headers: headers, body: body])
         else
-          result = super
+          super
         end
-        @last_result = {request: [method, path, headers: headers, body: body], response: result}
-        if result.is_a?(String)
-          mock = OpenStruct.new
-          mock.body = result
-          mock.code = 200
-          result = mock
-        end
-        handle_response(result, request_args: [method, path, headers: headers, body: body])
       rescue Timeout::Error => e
         raise TimeoutError.new(e.message)
       rescue OpenSSL::SSL::SSLError => e
@@ -49,7 +64,7 @@ module ActiveResource
     module Methods
       def resource_capture_controller(connection)
         connection.grab_request do |method, path ,params, headers, payload|
-          request.headers.merge(payload[:headers])
+          request.headers.merge(payload[:request_headers])
           ActiveResource.define_singleton_method(:api_type_name_object_map) { ApiTypeNameObjectMap }
           result = yield(method, params, payload)
           ActiveResource.define_singleton_method(:api_type_name_object_map) { TestHelper::TestClientMap }

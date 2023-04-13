@@ -11,7 +11,7 @@ module ActiveResource
     end
 
     def message
-      @response.env.reason_phrase
+      @response.reason_phrase
     end
 
     private

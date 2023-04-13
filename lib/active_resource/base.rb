@@ -333,6 +333,7 @@ module ActiveResource
     class_attribute :include_format_in_path
     self.include_format_in_path = true
 
+    class_attribute :client_name
     class_attribute :connection_class
     self.connection_class = Connection
 
@@ -672,6 +673,7 @@ module ActiveResource
           _connection.open_timeout = open_timeout if open_timeout
           _connection.read_timeout = read_timeout if read_timeout
           _connection.ssl_options = ssl_options if ssl_options
+          _connection.client_name = client_name if client_name
           _connection
         else
           superclass.connection
@@ -1623,7 +1625,8 @@ module ActiveResource
 
     def load_extra
       not_defaults = schema.extra.select{|key, attr| !attr.options[:extra][:default_request]}
-      if (not_loaded = not_defaults.keys - extra.keys) && not_loaded.present?
+      not_loaded = not_defaults.keys - extra.keys
+      if not_loaded.present?
         reload(extra: not_loaded)
       end
     end

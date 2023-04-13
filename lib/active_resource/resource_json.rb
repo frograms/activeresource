@@ -13,16 +13,18 @@ module ActiveResource
 
     class << self
       def default_rescue_method(obj, method_name, original_method, exception)
+        ret = {type: exception.class.name, message: exception.message}
         if exception.is_a?(NoMethodError) && exception =~ /#{method_name}/ && obj.respond_to?(method_name)
           msg = "resource_json `method: #{method_name}` rejected. if you want allow, alias as `#{obj.resource_methods_prefix}#{method_name}` in `class: #{obj.class.name}`"
-          Rails.logger.info(msg)
-          return msg
+          ActiveResource::Base.logger.info(msg)
+          return ret.merge(message: msg)
         end
         msg = "resource_json rescue `method: #{original_method.inspect}` for `class: #{obj.class.name}`"
         msg += ", `id: #{obj.id}`" if obj.respond_to?(:id)
+        ret = ret.merge(message: msg, original_message: exception.message, backtrace: exception.backtrace.join("\n"))
         msg += "\nexception: #{exception.message}\n#{exception.backtrace.join("\n")}"
-        Rails.logger.error(msg)
-        msg
+        ActiveResource::Base.logger.error(msg)
+        ret
       end
     end
 
@@ -102,8 +104,7 @@ module ActiveResource
           begin
             hash[m_name.to_s] = send(prefixed)
           rescue => e
-            hash['warnings'] ||= []
-            hash['warnings'] << ResourceJson.rescue_method.call(self, m_name, mtd, e).to_s
+            ::ActiveResource::RuntimeRegistry.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
           end
         when Array
           if mtd[0].present?
@@ -114,8 +115,7 @@ module ActiveResource
             begin
               hash[m_name.to_s] = send(prefixed, *mtd_args, **opts)
             rescue => e
-              hash['warnings'] ||= []
-              hash['warnings'] << ResourceJson.rescue_method.call(self, m_name, mtd, e).to_s
+              ::ActiveResource::RuntimeRegistry.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
             end
           end
         end

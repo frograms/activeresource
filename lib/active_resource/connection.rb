@@ -22,7 +22,7 @@ module ActiveResource
       head: "Accept"
     }
 
-    attr_reader :site, :user, :password, :bearer_token, :auth_type, :timeout, :open_timeout, :read_timeout, :proxy, :ssl_options
+    attr_reader :site, :user, :password, :bearer_token, :auth_type, :timeout, :open_timeout, :read_timeout, :proxy, :ssl_options, :client_name
     attr_accessor :format, :logger
 
     cattr_accessor :response_wrapper, default: proc{|response| ResponseWrapper.new(response)}
@@ -38,6 +38,7 @@ module ActiveResource
     def initialize(site, format = ActiveResource::Formats::JsonFormat, logger: nil)
       raise ArgumentError, "Missing site URI" unless site
       @proxy = @user = @password = @bearer_token = nil
+      @client_name = 'active_resource'
       self.site = site
       self.format = format
       self.logger = logger
@@ -82,10 +83,14 @@ module ActiveResource
     # Hash of options applied to Net::HTTP instance when +site+ protocol is 'https'.
     attr_writer :ssl_options
 
+    attr_writer :client_name
+
     # Executes a GET request.
     # Used to get (find) resources.
     def get(path, headers = {})
-      with_auth { request(:get, path, headers: build_request_headers(headers, :get, self.site.merge(path))) }
+      with_auth do
+        request(:get, path, headers: build_request_headers(headers, :get, self.site.merge(path)))
+      end
     end
 
     # Executes a DELETE request (see HTTP protocol documentation if unfamiliar).
@@ -123,15 +128,18 @@ module ActiveResource
     private
       # Makes a request to the remote service.
       def request(method, path, headers: {}, body: nil)
-        result = ActiveSupport::Notifications.instrument("request.active_resource") do |payload|
+        result = ActiveSupport::Notifications.instrument("request.#{client_name}") do |payload|
           payload[:method]      = method
           payload[:request_uri] = "#{site.scheme}://#{site.host}:#{site.port}#{path}"
-          payload[:result]      = http.send(method, path) do |req|
+          payload[:request_headers] = headers.merge('User-Agent' => client_name)
+          payload[:request_body] = body
+          result = http.send(method, path) do |req|
             req.headers = headers
             req.body = body
           end
+          result = self.class.response_wrapper.call(result)
+          payload[:result] = result
         end
-        result = self.class.response_wrapper.call(result)
         @last_result = {request: [method, path, headers: headers, body: body], response: result}
         handle_response(result, request_args: [method, path, headers: headers, body: body])
       rescue Timeout::Error => e
