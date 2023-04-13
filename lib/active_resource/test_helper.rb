@@ -21,7 +21,7 @@ module ActiveResource
       end
 
       def request(method, path, headers: {}, body: nil)
-        if @grab_request
+        if (grab = @grab_request.shift)
           result = ActiveSupport::Notifications.instrument("request.#{client_name}") do |payload|
             payload[:method]      = method
             payload[:request_uri] = "#{site.scheme}://#{site.host}:#{site.port}#{path}"
@@ -34,7 +34,7 @@ module ActiveResource
             else
               params = Rack::Utils.parse_nested_query(uri.query).with_indifferent_access
             end
-            result = @grab_request.call(method, uri.path, params, payload[:request_headers], payload)
+            result = grab.call(method, uri.path, params, payload[:request_headers], payload)
             if result.is_a?(String)
               mock = OpenStruct.new
               mock.body = result
@@ -45,7 +45,6 @@ module ActiveResource
             payload[:result] = result
           end
           @last_result = {request: [method, path, headers: headers, body: body], response: result}
-          @grab_request = nil
           handle_response(result, request_args: [method, path, headers: headers, body: body])
         else
           super
@@ -57,7 +56,8 @@ module ActiveResource
       end
 
       def grab_request(&block)
-        @grab_request = block
+        @grab_request ||= []
+        @grab_request << block
       end
     end
 
