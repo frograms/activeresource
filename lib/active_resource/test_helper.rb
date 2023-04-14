@@ -3,6 +3,8 @@ module ActiveResource
     mattr_accessor :client_object_map
     class ResponseWrapper < ::ActiveResource::ResponseWrapper
       def code
+        return @response.code if @response.respond_to?(:code)
+        return @response.status if @response.respond_to?(:status)
         (@response.code rescue nil) || @response.status
       end
 
