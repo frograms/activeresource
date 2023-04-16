@@ -9,7 +9,13 @@ module ActiveResource
       end
 
       def body
-        super # for ActiveResource::Base#parse_collection
+        super # ActiveResource::Base#parse_collection check this has body method
+      end
+
+      def message
+        return @response.message if @response.respond_to?(:message)
+        return @response.reason_phrase if @response.respond_to?(:reason_phrase)
+        (@response.message rescue nil) || @response.reason_phrase
       end
     end
 
