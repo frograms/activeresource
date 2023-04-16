@@ -1624,10 +1624,12 @@ module ActiveResource
     end
 
     def load_extra
+      return self if @load_extra
       not_defaults = schema.extra.select{|key, attr| !attr.options[:extra][:default_request]}
       not_loaded = not_defaults.keys - extra.keys
       if not_loaded.present?
         reload(extra: not_loaded)
+        @load_extra = true
       end
     end
 
