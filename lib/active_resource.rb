@@ -48,4 +48,4 @@ end
 require "active_resource/railtie" if defined?(Rails.application)
 require "active_resource/api_type_name_object_map"
 require "active_resource/inheritance"
-require "active_resource/runtime_registry"
+require "active_resource/current"

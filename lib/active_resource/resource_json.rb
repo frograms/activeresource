@@ -104,7 +104,7 @@ module ActiveResource
           begin
             hash[m_name.to_s] = send(prefixed)
           rescue => e
-            ::ActiveResource::RuntimeRegistry.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
+            ::ActiveResource::Current.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
           end
         when Array
           if mtd[0].present?
@@ -115,7 +115,7 @@ module ActiveResource
             begin
               hash[m_name.to_s] = send(prefixed, *mtd_args, **opts)
             rescue => e
-              ::ActiveResource::RuntimeRegistry.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
+              ::ActiveResource::Current.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
             end
           end
         end
