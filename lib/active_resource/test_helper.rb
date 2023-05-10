@@ -1,6 +1,18 @@
 module ActiveResource
   module TestHelper
     mattr_accessor :client_object_map
+
+    module ConnectionReleaseRequest
+      def release_request
+        connection.release_request if site
+        subclasses.map do |klass|
+          klass.release_request
+        end
+      end
+    end
+
+    ::ActiveResource::Base.send(:extend, ConnectionReleaseRequest)
+
     class ResponseWrapper < ::ActiveResource::ResponseWrapper
       def code
         return @response.code if @response.respond_to?(:code)
@@ -66,6 +78,10 @@ module ActiveResource
       def grab_request(&block)
         @grab_request ||= []
         @grab_request << block
+      end
+
+      def release_request
+        @grab_request = []
       end
     end
 
