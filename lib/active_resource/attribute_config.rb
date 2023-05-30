@@ -86,7 +86,6 @@ module ActiveResource
     def define_extra_accessor_in_model
       return if options[:skip_define_accessor]
       if model.method_defined?(attr_name) || model.method_defined?("#{attr_name}=")
-        binding.pry
         raise ActiveResource::Schema::AlreadyDefinedMethod, "attribute method already defined `#{attr_name}` or `#{attr_name}=` in `#{model.name}`"
       end
       __attr_config__ = self
