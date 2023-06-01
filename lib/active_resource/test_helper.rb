@@ -83,6 +83,10 @@ module ActiveResource
       def release_request
         @grab_request = []
       end
+
+      def grab_consumed?
+        @grab_request.empty?
+      end
     end
 
     module Methods
