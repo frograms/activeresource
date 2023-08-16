@@ -85,7 +85,7 @@ module ActiveResource
       end
 
       def grab_consumed?
-        @grab_request.empty?
+        @grab_request.blank?
       end
     end
 

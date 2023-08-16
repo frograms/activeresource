@@ -1260,24 +1260,21 @@ module ActiveResource
         attributes = args.shift
         if args.size > 0
           persisted = args.shift
-          options = kwargs
         else
           persisted = kwargs.delete(:persisted)
-          options = kwargs
         end
+        options = kwargs
+        options[:persisted] = persisted if persisted
       else
-        persisted = kwargs.delete(:persisted)
         attributes = kwargs
         options = {}
       end
-      options[:persisted] = persisted
 
       unless attributes.respond_to?(:to_hash)
         raise ArgumentError, "expected attributes to be able to convert to Hash, got #{attributes.inspect}"
       end
       @attributes     = {}.with_indifferent_access
       @prefix_options = {}
-      @persisted = options[:persisted]
       @extra = {}.with_indifferent_access
 
       input = (attributes.to_hash || {}).with_indifferent_access
@@ -1547,18 +1544,26 @@ module ActiveResource
     def load(*args, **kwargs)
       if args.size > 0
         attributes = args.shift
-        persisted = kwargs.delete(:persisted)
         options = kwargs
       else
-        persisted = kwargs.delete(:persisted)
         attributes = kwargs
+        options = {}
       end
+
       unless attributes.respond_to?(:to_hash)
         raise ArgumentError, "expected attributes to be able to convert to Hash, got #{attributes.inspect}"
       end
 
       attributes = attributes.to_hash
       @prefix_options, attributes = split_options(attributes)
+
+      if options.key?(:persisted)
+        @persisted = kwargs.delete(:persisted)
+      elsif attributes.key?(:persisted)
+        @persisted = attributes.delete(:persisted)
+      else
+        @persisted = nil
+      end
 
       attributes.each do |key, value|
         if (extra_config = schema.extra_by_server_name[key])
@@ -1577,7 +1582,7 @@ module ActiveResource
           @attributes[key.to_s] = value.map do |attrs|
             if attrs.is_a?(Hash)
               resource ||= find_or_create_resource_for_collection(key, value: value)
-              resource.new(attrs, persisted)
+              resource.new(attrs, persisted?)
             else
               attrs.duplicable? ? attrs.dup : attrs
             end
@@ -1599,7 +1604,7 @@ module ActiveResource
               @attributes[key.to_s] = ins
             end
           elsif resource < ActiveResource::Base
-            ins = resource.new(value, persisted)
+            ins = resource.new(value, persisted?)
             if respond_to?(:"#{key}=")
               send(:"#{key}=", ins)
             else

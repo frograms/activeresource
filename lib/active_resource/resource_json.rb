@@ -104,7 +104,11 @@ module ActiveResource
           begin
             hash[m_name.to_s] = send(prefixed)
           rescue => e
-            ::ActiveResource::Current.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
+            if respond_to?(m_name)
+              ::ActiveResource::Current.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
+            else
+              raise NoMethodError, "undefined method `#{m_name}' for #{self.class.name}"
+            end
           end
         when Array
           if mtd[0].present?
@@ -115,7 +119,11 @@ module ActiveResource
             begin
               hash[m_name.to_s] = send(prefixed, *mtd_args, **opts)
             rescue => e
-              ::ActiveResource::Current.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
+              if respond_to?(m_name)
+                ::ActiveResource::Current.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
+              else
+                raise NoMethodError, "undefined method `#{m_name}' for #{self.class.name}"
+              end
             end
           end
         end
@@ -142,6 +150,11 @@ end
 
 ActiveSupport.on_load(:active_record) do
   include ActiveResource::ResourceJson
+  def resource_hash(options = nil)
+    hash = super
+    hash['persisted'] = true if persisted?
+    hash
+  end
 end
 
 class Module

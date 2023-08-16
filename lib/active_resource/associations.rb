@@ -126,7 +126,7 @@ module ActiveResource::Associations
     end
     ivar_name = :"@#{method_name}"
 
-    if method_defined?(method_name)
+    if instance_methods(false).include?(method_name.to_sym)
       instance_variable_set(ivar_name, nil)
       remove_method(method_name)
     end
@@ -140,7 +140,7 @@ module ActiveResource::Associations
       end
     end
 
-    if method_defined?("#{method_name}=")
+    if instance_methods(false).include?("#{method_name}=".to_sym)
       remove_method("#{method_name}=")
     end
 
@@ -211,7 +211,7 @@ module ActiveResource::Associations
         end
       end
     else
-      define_method(method_name) do
+      define_method(method_name) do |options = nil|
         if instance_variable_defined?(ivar_name)
           instance_variable_get(ivar_name)
         elsif attributes.include?(method_name)
@@ -219,7 +219,11 @@ module ActiveResource::Associations
         elsif !new_record?
           klass = reflection.klass(resource: self)
           if klass < ActiveResource::Base
-            instance_variable_set(ivar_name, klass.find(:all, params: { reflection.foreign_key => self.id }))
+            params_opts = reflection.options[:params_opts] || {}
+            options ||= {}
+            options[:params] ||= params_opts
+            options[:params][reflection.foreign_key] = self.id
+            instance_variable_set(ivar_name, klass.find(:all, **options))
           elsif reflection.options[:getter]
             instance_variable_set(ivar_name, self.send(reflection.options[:getter]))
           else

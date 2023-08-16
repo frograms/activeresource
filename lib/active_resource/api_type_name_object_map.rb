@@ -67,6 +67,12 @@ module ActiveResource
         end
       end
 
+      def find_object!(api_type_name)
+        object = find_object(api_type_name)
+        raise TypeNotFound, "Object not found: api_type_name=#{api_type_name}" unless object
+        object
+      end
+
       def object_fallback(&block)
         @@object_fallback = block
       end
