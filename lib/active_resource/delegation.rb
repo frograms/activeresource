@@ -14,6 +14,11 @@ module ActiveResource
       @options[:includes] ||= []
       @options[:extra] ||= []
       @options[:order_by] ||= {}.with_indifferent_access
+      object = resource.is_a?(Class) ? resource : resource.class
+      if object.superclass != ActiveResource::Base
+        api_type_name = ActiveResource.api_type_name_object_map.api_type_name_of(object)
+        @options[:params][:__type__] = api_type_name
+      end
       @_cache = {}
     end
 
@@ -103,6 +108,10 @@ module ActiveResource
     def exists?
       return _cache[:exists?] if _cache[:exists?]
       _cache[:exists?] = @resource.find(:exists?, build_options)
+    end
+
+    def blank?
+      !exists?
     end
   end
 end

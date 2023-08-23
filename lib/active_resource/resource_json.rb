@@ -152,7 +152,7 @@ ActiveSupport.on_load(:active_record) do
   include ActiveResource::ResourceJson
   def resource_hash(options = nil)
     hash = super
-    hash['persisted'] = true if persisted?
+    hash['__persisted__'] = true if persisted?
     hash
   end
 end

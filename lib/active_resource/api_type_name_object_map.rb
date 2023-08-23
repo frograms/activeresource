@@ -73,6 +73,11 @@ module ActiveResource
         object
       end
 
+      def find_instance!(api_type_name, id)
+        object = find_object!(api_type_name)
+        object < ActiveRecord::Base ? object.find_by_id(id) : object.new(id: id, persisted: true)
+      end
+
       def object_fallback(&block)
         @@object_fallback = block
       end
@@ -92,6 +97,26 @@ module ActiveResource
       def api_type_name_fallback(&block)
         @@api_type_name_fallback = block
       end
+
+      def api_type_name_of(object)
+        if object.is_a?(Class)
+          name = object.name
+        else
+          if object.is_a?(String)
+            name = object
+          else
+            return api_type_name_of(object.class)
+          end
+        end
+        if api_type_name_map.key?(name)
+          return api_type_name_map[name]
+        end
+        if object.is_a?(Class) && object.superclass < ActiveRecord::Base
+          api_type_name_of(object.superclass)
+        else
+          find_api_type_name(object)
+        end
+      end
     end
   end
 
@@ -100,7 +125,7 @@ module ActiveResource
 
     class_methods do
       def api_type_name
-        ActiveResource::ApiTypeNameObjectMap.find_api_type_name(self)
+        ActiveResource.api_type_name_object_map.find_api_type_name(self)
       end
     end
 

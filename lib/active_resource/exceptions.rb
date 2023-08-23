@@ -24,7 +24,7 @@ module ActiveResource
         uri = URI.parse(@request[:path])
         @request[:format] = uri.path.scan(/.*\.(json|xml)$/).flatten[0]
       end
-      if decoder && @response.body.present?
+      if @response && decoder && @response.body.present?
         @response_body = decoder.decode_as_it_is(@response.body)
         if @response_body.is_a?(Hash)
           @response_body = @response_body.with_indifferent_access

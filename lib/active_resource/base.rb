@@ -337,6 +337,9 @@ module ActiveResource
     class_attribute :connection_class
     self.connection_class = Connection
 
+    class_attribute :element_name
+    class_attribute :collection_name
+
     class << self
       include ThreadsafeAttributes
       threadsafe_attribute :_headers, :_connection, :_user, :_password, :_bearer_token, :_site, :_proxy
@@ -698,22 +701,18 @@ module ActiveResource
         merged
       end
 
-      attr_writer :element_name
-
       def element_name
         @element_name ||= model_name.element
       end
 
-      attr_writer :collection_name
 
       def collection_name
         @collection_name ||= ActiveSupport::Inflector.pluralize(element_name)
       end
 
-      def root_class?; false end
-
       # act like ActiveRecord::Base
       def base_class
+        binding.pry if superclass == Object
         return self if superclass.root_class?
         return self if superclass == ActiveResource::Base
         superclass.base_class
@@ -1039,6 +1038,12 @@ module ActiveResource
         where(hash).first
       end
 
+      def find_by_id(id)
+        find(id)
+      rescue ActiveResource::ResourceNotFound
+        nil
+      end
+
 
       # A convenience wrapper for <tt>find(:first, *args)</tt>. You can pass
       # in all the same arguments to this method as you can to
@@ -1133,10 +1138,12 @@ module ActiveResource
               get(from, params)
             when String
               path = "#{from}#{query_string(query_options)}"
-              format.decode(connection.get(path, hs).body)
+              res = connection.get(path, hs)
+              format.decode(res.body)
             else
               path = collection_path(prefix_options, query_options)
-              format.decode(connection.get(path, hs).body)
+              res = connection.get(path, hs)
+              format.decode(res.body)
             end
 
           if query_options[:__invoke__]
@@ -1185,9 +1192,19 @@ module ActiveResource
 
         def instantiate_record(record, prefix_options = {})
           col = prefix_options.delete(:collection)
-          new(record, persisted: true, collection: col).tap do |resource|
+          ins = new(record, persisted: true, collection: col).tap do |resource|
             resource.prefix_options = prefix_options
           end
+          if (ins_type = ins.attributes['__type__']).present?
+            if (map_type = ActiveResource::ApiTypeNameObjectMap.find_object(ins_type)) && self != map_type
+              if map_type < ActiveResource::Base
+                return map_type.new(record, persisted: true, collection: col).tap do |resource|
+                  resource.prefix_options = prefix_options
+                end
+              end
+            end
+          end
+          ins
         end
 
 
@@ -1228,6 +1245,12 @@ module ActiveResource
 
     attr_accessor :attributes, :extra # :nodoc:
     attr_accessor :prefix_options # :nodoc:
+
+    class << self
+      attr_accessor :root_class
+      def root_class?; root_class end
+    end
+    self.root_class = true
 
     # If no schema has been defined for the class (see
     # <tt>ActiveResource::schema=</tt>), the default automatic schema is
@@ -1279,12 +1302,16 @@ module ActiveResource
 
       input = (attributes.to_hash || {}).with_indifferent_access
       el_name = self.class.element_name rescue nil
-      if el_name && input.key?(el_name)
+      if el_name && input.key?(el_name) && !input.key?('id')
         attrs, @extra = input.partition{|k, v| k == el_name}
         attrs = attrs[0][1]
         @extra = Hash[@extra].with_indifferent_access
       else
         attrs = input
+      end
+
+      if block_given?
+        attrs, options = yield(attrs, options)
       end
 
       load(attrs, **options)
@@ -1561,6 +1588,8 @@ module ActiveResource
         @persisted = kwargs.delete(:persisted)
       elsif attributes.key?(:persisted)
         @persisted = attributes.delete(:persisted)
+      elsif attributes.key?('__persisted__')
+        @persisted = attributes.delete('__persisted__')
       else
         @persisted = nil
       end
@@ -1581,7 +1610,7 @@ module ActiveResource
           resource = nil
           @attributes[key.to_s] = value.map do |attrs|
             if attrs.is_a?(Hash)
-              resource ||= find_or_create_resource_for_collection(key, value: value)
+              resource ||= find_or_create_resource_for_collection(key, value: attrs)
               resource.new(attrs, persisted?)
             else
               attrs.duplicable? ? attrs.dup : attrs
@@ -1592,8 +1621,13 @@ module ActiveResource
           if defined?(ActiveRecord) && resource < ActiveRecord::Base
             attr = value.dup
             if resource.instance_methods.include?(:assign_resource_attributes)
-              ins = resource.new
-              ins.assign_resource_attributes(attr)
+              if attr['id'] && attr['__load__']
+                ins = resource.find_by_id(attr['id'])
+              else
+                ins = resource.new
+                atr = attr.reject{|k, v| k =~ /^__.+__$/}
+                ins.assign_resource_attributes(atr)
+              end
             else
               ins = resource.new(attr)
             end
@@ -1604,7 +1638,7 @@ module ActiveResource
               @attributes[key.to_s] = ins
             end
           elsif resource < ActiveResource::Base
-            ins = resource.new(value, persisted?)
+            ins = resource.new(value)
             if respond_to?(:"#{key}=")
               send(:"#{key}=", ins)
             else
@@ -1781,6 +1815,12 @@ module ActiveResource
 
       # Tries to find a resource for a given collection name; if it fails, then the resource is created
       def find_or_create_resource_for_collection(name, value: nil)
+        type_str = value&.delete('__type__')
+        if type_str.present? && (value_type = ActiveResource.api_type_name_object_map.find_object(type_str))
+          if reflections.key?(name.to_sym) && value_type <= reflections[name.to_sym].klass
+            return value_type
+          end
+        end
         return reflections[name.to_sym].klass if reflections.key?(name.to_sym)
         find_or_create_resource_for(ActiveSupport::Inflector.singularize(name.to_s), value: value)
       end

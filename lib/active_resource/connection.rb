@@ -146,6 +146,9 @@ module ActiveResource
         raise TimeoutError.new(e.message)
       rescue OpenSSL::SSL::SSLError => e
         raise SSLError.new(e.message)
+      rescue Faraday::ConnectionFailed => e
+        message = e.inspect
+        raise ActiveResource::ConnectionError.new(nil, message, request_args: [method, path, headers: headers, body: body])
       end
 
       # Handles response and error codes from the remote service.
