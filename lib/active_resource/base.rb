@@ -712,7 +712,6 @@ module ActiveResource
 
       # act like ActiveRecord::Base
       def base_class
-        binding.pry if superclass == Object
         return self if superclass.root_class?
         return self if superclass == ActiveResource::Base
         superclass.base_class
@@ -1117,6 +1116,13 @@ module ActiveResource
         instantiate_collection(res)
       end
 
+      def extract_api_type_name(attrs)
+        el_name = self.class.element_name rescue nil
+        return attrs['__type__'] if attrs['__type__'].present?
+        return attrs[el_name]['__type__'] if attrs[el_name].is_a?(Hash) && attrs[el_name]['__type__'].present?
+        nil
+      end
+
       private
         def check_prefix_options(prefix_options)
           p_options = HashWithIndifferentAccess.new(prefix_options)
@@ -1182,7 +1188,7 @@ module ActiveResource
           instantiate_record(result, prefix_options)
         end
 
-        def instantiate_collection(collection, original_params = {}, prefix_options = {})
+        public def instantiate_collection(collection, original_params = {}, prefix_options = {})
           col = collection_parser.new(collection).tap do |parser|
             parser.resource_class  = self
             parser.original_params = original_params
@@ -1190,21 +1196,18 @@ module ActiveResource
           col.collect! { |record| instantiate_record(record, prefix_options.merge(collection: col)) }
         end
 
-        def instantiate_record(record, prefix_options = {})
+        public def instantiate_record(record, prefix_options = {})
           col = prefix_options.delete(:collection)
-          ins = new(record, persisted: true, collection: col).tap do |resource|
-            resource.prefix_options = prefix_options
-          end
-          if (ins_type = ins.attributes['__type__']).present?
-            if (map_type = ActiveResource::ApiTypeNameObjectMap.find_object(ins_type)) && self != map_type
-              if map_type < ActiveResource::Base
-                return map_type.new(record, persisted: true, collection: col).tap do |resource|
-                  resource.prefix_options = prefix_options
-                end
-              end
+          api_type_name = extract_api_type_name(record)
+          klass = self
+          if api_type_name
+            if (obj = ActiveResource.api_type_name_object_map.find_object_namespace_fallback(api_type_name)) && self != obj
+              klass = obj if obj < ActiveResource::Base
             end
           end
-          ins
+          klass.new(record, persisted: true, collection: col).tap do |resource|
+            resource.prefix_options = prefix_options
+          end
         end
 
 
@@ -1588,8 +1591,8 @@ module ActiveResource
         @persisted = kwargs.delete(:persisted)
       elsif attributes.key?(:persisted)
         @persisted = attributes.delete(:persisted)
-      elsif attributes.key?('__persisted__')
-        @persisted = attributes.delete('__persisted__')
+      elsif attributes.key?(:__persisted__)
+        @persisted = attributes.delete(:__persisted__)
       else
         @persisted = nil
       end
@@ -1815,12 +1818,6 @@ module ActiveResource
 
       # Tries to find a resource for a given collection name; if it fails, then the resource is created
       def find_or_create_resource_for_collection(name, value: nil)
-        type_str = value&.delete('__type__')
-        if type_str.present? && (value_type = ActiveResource.api_type_name_object_map.find_object(type_str))
-          if reflections.key?(name.to_sym) && value_type <= reflections[name.to_sym].klass
-            return value_type
-          end
-        end
         return reflections[name.to_sym].klass if reflections.key?(name.to_sym)
         find_or_create_resource_for(ActiveSupport::Inflector.singularize(name.to_s), value: value)
       end
@@ -1842,15 +1839,20 @@ module ActiveResource
 
       # Tries to find a resource for a given name; if it fails, then the resource is created
       def find_or_create_resource_for(name, value: nil)
+        if value.is_a?(Hash) && value['__type__'].present?
+          resource_name = value['__type__']
+          object = ActiveResource.api_type_name_object_map.find_object_namespace_fallback(resource_name)
+          return object if object
+        end
+
         if reflections.key?(name.to_sym)
-          if value.is_a?(Hash) && value['__type__'].present?
-            resource_name = value['__type__']
-          else
-            return reflections[name.to_sym].klass(resource: self)
-          end
+          return reflections[name.to_sym].klass(resource: self)
         else
           resource_name = name.to_s.camelize
         end
+
+        object = ActiveResource.api_type_name_object_map.find_object_namespace_fallback(resource_name)
+        return object if object
 
         const_args = [resource_name, false]
 
@@ -1861,9 +1863,7 @@ module ActiveResource
           self.class.const_get(*const_args)
         else
           ancestors = self.class.name.to_s.split("::")
-          if (object = ActiveResource.api_type_name_object_map.find_object(resource_name))
-            object
-          elsif ancestors.size > 1
+          if ancestors.size > 1
             find_or_create_resource_in_modules(resource_name, ancestors)
           else
             if Object.const_defined?(*const_args)

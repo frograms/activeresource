@@ -67,6 +67,19 @@ module ActiveResource
         end
       end
 
+      def find_object_namespace_fallback(api_type_name)
+        if object_map.key?(api_type_name)
+          object_map[api_type_name]&.constantize
+        else
+          ancestors = api_type_name.split('::')
+          if ancestors.size > 1
+            find_object_namespace_fallback(ancestors[0..-2].join('::'))
+          else
+            nil
+          end
+        end
+      end
+
       def find_object!(api_type_name)
         object = find_object(api_type_name)
         raise TypeNotFound, "Object not found: api_type_name=#{api_type_name}" unless object

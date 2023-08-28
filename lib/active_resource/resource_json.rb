@@ -153,6 +153,7 @@ ActiveSupport.on_load(:active_record) do
   def resource_hash(options = nil)
     hash = super
     hash['__persisted__'] = true if persisted?
+    hash['__type__'] = self.class.name
     hash
   end
 end

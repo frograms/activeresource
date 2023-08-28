@@ -116,6 +116,12 @@ module ActiveResource
         end
       end
 
+      def resource_capture_model(connection)
+        connection.grab_request do |method, path, params, headers, payload|
+          yield(method, path, params, headers, payload)
+        end
+      end
+
       def resource_client_object_map
         ActiveResource::TestHelper.send(:remove_const, :TestClientMap) rescue nil
         mod = ActiveResource::ApiTypeNameObjectMap.dup

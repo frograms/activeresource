@@ -223,7 +223,28 @@ module ActiveResource::Associations
             options ||= {}
             options[:params] ||= params_opts
             options[:params][reflection.foreign_key] = self.id
-            instance_variable_set(ivar_name, klass.find(:all, **options))
+            order_by = options[:params].delete(:order_by) || options.delete(:order_by)
+            options[:params][:__order_by__] ||= order_by if order_by
+            if reflection.options[:getter]
+              if reflection.options[:getter] == :myself
+                params = (reflection.options[:params_opts] || {}).dup
+                params = params.merge(options[:params]).symbolize_keys
+                response = get(reflection.name, **params)
+                col = response['results'].map{|r| reflection.klass.instantiate_record(r)}
+                instance_variable_set(ivar_name, col)
+              elsif reflection.options[:getter].is_a?(Proc)
+                params = (reflection.options[:params_opts] || {}).dup
+                params = params.merge(options[:params]).symbolize_keys
+                response = reflection.options[:getter].call(self, params)
+                col = response['results'].map{|r| reflection.klass.instantiate_record(r)}
+                instance_variable_set(ivar_name, col)
+              end
+            else
+              if ActiveResource.api_type_name_object_map.object_map.key?(reflection.class_name)
+                options[:params][:__type__] = reflection.class_name # association class_name is api_type_name
+              end
+              instance_variable_set(ivar_name, klass.find(:all, **options))
+            end
           elsif reflection.options[:getter]
             instance_variable_set(ivar_name, self.send(reflection.options[:getter]))
           else

@@ -67,7 +67,7 @@ module ActiveResource
       #
       # <tt>has_many :clients</tt> returns <tt>'Client'</tt>
       def class_name(resource: nil)
-        if options[:polymorphic] == true
+        if options[:polymorphic] == true && resource.respond_to?(foreign_type)
           resource.send(foreign_type)
         else
           @class_name ||= derive_class_name(resource: resource)
