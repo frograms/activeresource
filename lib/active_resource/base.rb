@@ -1205,7 +1205,7 @@ module ActiveResource
               klass = obj if obj < ActiveResource::Base
             end
           end
-          klass.new(record, persisted: true, collection: col).tap do |resource|
+          klass.new(record, collection: col).tap do |resource|
             resource.prefix_options = prefix_options
           end
         end
@@ -1316,7 +1316,7 @@ module ActiveResource
       if block_given?
         attrs, options = yield(attrs, options)
       end
-
+      attrs.delete(:__type__)
       load(attrs, **options)
     end
 
@@ -1593,8 +1593,8 @@ module ActiveResource
         @persisted = attributes.delete(:persisted)
       elsif attributes.key?(:__persisted__)
         @persisted = attributes.delete(:__persisted__)
-      else
-        @persisted = nil
+      elsif attributes.key?(self.class.primary_key.to_sym).present?
+        @persisted = true
       end
 
       attributes.each do |key, value|
@@ -1614,7 +1614,7 @@ module ActiveResource
           @attributes[key.to_s] = value.map do |attrs|
             if attrs.is_a?(Hash)
               resource ||= find_or_create_resource_for_collection(key, value: attrs)
-              resource.new(attrs, persisted?)
+              resource.new(attrs)
             else
               attrs.duplicable? ? attrs.dup : attrs
             end
@@ -1754,6 +1754,10 @@ module ActiveResource
       attributes[attr_name] = value
     end
 
+    def __type__
+      ActiveResource.api_type_name_object_map.api_type_name_of(self.class)
+    end
+
     protected
       def connection(refresh = false)
         self.class.connection(refresh)
@@ -1771,7 +1775,7 @@ module ActiveResource
       # Create (i.e., \save to the remote service) the \new resource.
       def create
         run_callbacks :create do
-          connection.post(collection_path, encode, self.class.headers).tap do |response|
+          connection.post(collection_path, encode(methods: [:__type__]), self.class.headers).tap do |response|
             self.id = id_from_response(response)
             load_attributes_from_response(response)
           end

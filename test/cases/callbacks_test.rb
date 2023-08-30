@@ -72,33 +72,33 @@ class CallbacksTest < ActiveSupport::TestCase
   end
 
   def test_create
-    developer = Developer.create(@developer_attrs)
-    assert_equal [
-      [ :before_validation,           :method ],
-      [ :before_validation,           :proc   ],
-      [ :before_validation,           :object ],
-      [ :before_validation,           :block  ],
-      [ :after_validation,            :method ],
-      [ :after_validation,            :proc   ],
-      [ :after_validation,            :object ],
-      [ :after_validation,            :block  ],
-      [ :before_save,                 :method ],
-      [ :before_save,                 :proc   ],
-      [ :before_save,                 :object ],
-      [ :before_save,                 :block  ],
-      [ :before_create,               :method ],
-      [ :before_create,               :proc   ],
-      [ :before_create,               :object ],
-      [ :before_create,               :block  ],
-      [ :after_create,                :method ],
-      [ :after_create,                :proc   ],
-      [ :after_create,                :object ],
-      [ :after_create,                :block  ],
-      [ :after_save,                  :method ],
-      [ :after_save,                  :proc   ],
-      [ :after_save,                  :object ],
-      [ :after_save,                  :block  ]
-    ], developer.history
+    developer = Developer.create(@developer_attrs.merge(persisted: false))
+    assert developer.persisted?
+    history = developer.history
+    assert_equal [ :before_validation,           :method ], history[0]
+    assert_equal [ :before_validation,           :proc   ], history[1]
+    assert_equal [ :before_validation,           :object ], history[2]
+    assert_equal [ :before_validation,           :block  ], history[3]
+    assert_equal [ :after_validation,            :method ], history[4]
+    assert_equal [ :after_validation,            :proc   ], history[5]
+    assert_equal [ :after_validation,            :object ], history[6]
+    assert_equal [ :after_validation,            :block  ], history[7]
+    assert_equal [ :before_save,                 :method ], history[8]
+    assert_equal [ :before_save,                 :proc   ], history[9]
+    assert_equal [ :before_save,                 :object ], history[10]
+    assert_equal [ :before_save,                 :block  ], history[11]
+    assert_equal [ :before_create,               :method ], history[12]
+    assert_equal [ :before_create,               :proc   ], history[13]
+    assert_equal [ :before_create,               :object ], history[14]
+    assert_equal [ :before_create,               :block  ], history[15]
+    assert_equal [ :after_create,                :method ], history[16]
+    assert_equal [ :after_create,                :proc   ], history[17]
+    assert_equal [ :after_create,                :object ], history[18]
+    assert_equal [ :after_create,                :block  ], history[19]
+    assert_equal [ :after_save,                  :method ], history[20]
+    assert_equal [ :after_save,                  :proc   ], history[21]
+    assert_equal [ :after_save,                  :object ], history[22]
+    assert_equal [ :after_save,                  :block  ], history[23]
   end
 
   def test_update

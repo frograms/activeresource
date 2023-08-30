@@ -1578,7 +1578,7 @@ class BaseTest < ActiveSupport::TestCase
       mock.post "/plans.json", {}, silver_plan, 201, "Location" => "/plans/silver.json"
     end
 
-    plan = SubscriptionPlan.new(code: "silver", price: 5.00)
+    plan = SubscriptionPlan.new(code: "silver", price: 5.00, persisted: false)
     assert plan.new?
 
     plan.save!

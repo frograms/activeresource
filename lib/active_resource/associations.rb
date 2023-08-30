@@ -134,9 +134,16 @@ module ActiveResource::Associations
     define_method(method_name) do
       if instance_variable_defined?(ivar_name)
         instance_variable_get(ivar_name)
-      elsif association_id = send(reflection.foreign_key)
-        kl = reflection.klass(resource: self)
-        instance_variable_set(ivar_name, kl.find_by(kl.primary_key => association_id))
+      elsif (association_id = send(reflection.foreign_key))
+        if reflection.options[:polymorphic]
+          api_type_name = send(reflection.foreign_type)
+          kl = ActiveResource.api_type_name_object_map.find_object(api_type_name)
+          kl ||= reflection.klass(resource: self)
+          instance_variable_set(ivar_name, kl.find_by(kl.primary_key => association_id))
+        else
+          kl = reflection.klass(resource: self)
+          instance_variable_set(ivar_name, kl.find_by(kl.primary_key => association_id))
+        end
       end
     end
 

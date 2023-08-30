@@ -68,33 +68,40 @@ def setup_response
       id: 1,
       name: "Luis",
       friends: [{
+        id: 1,
         name: "JK",
         brothers: [
           {
+            id: 8,
             name: "Mateo",
-            children: [{ name: "Edith" }, { name: "Martha" }]
+            children: [{ id: 10, name: "Edith" }, { id: 11, name: "Martha" }]
           }, {
+            id: 9,
             name: "Felipe",
-            children: [{ name: "Bryan" }, { name: "Luke" }]
+            children: [{ id: 12, name: "Bryan" }, { id: 13, name: "Luke" }]
           }
         ]
       }, {
+        id: 2,
         name: "Eduardo",
         brothers: [
           {
+            id: 5,
             name: "Sebas",
-            children: [{ name: "Andres" }, { name: "Jorge" }]
+            children: [{ id: 14, name: "Andres" }, { id: 15, name: "Jorge" }]
           }, {
+            id: 6,
             name: "Elsa",
-            children: [{ name: "Natacha" }]
+            children: [{ id: 16, name: "Natacha" }]
           }, {
+            id: 7,
             name: "Milena",
             children: []
           }
         ]
       }],
-      enemies: [{ name: "Joker" }],
-      mother: { name: "Ingeborg" }
+      enemies: [{ id: 3, name: "Joker" }],
+      mother: { id: 4, name: "Ingeborg" }
     }
   }.to_json
 
