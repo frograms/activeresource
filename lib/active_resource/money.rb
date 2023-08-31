@@ -19,7 +19,7 @@ ActiveResource::Base.instance_eval do
     cents_attr ||= "#{name}_cents"
 
     schema do
-      string currency_attr
+      string currency_attr, skip_duplicate_accessor: true
       integer cents_attr
     end
 

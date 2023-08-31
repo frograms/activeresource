@@ -12,25 +12,45 @@ module ActiveResource # :nodoc:
       string: AttributeConfig.new(:string),
       text: AttributeConfig.new(:text),
       integer: AttributeConfig.new(:integer) do |resource, repo_name, attr_name, value|
-        resource.send(repo_name)[attr_name] = value ? Integer(value) : nil
+        begin
+          value ? Integer(value) : nil
+        rescue ArgumentError => e
+          raise InvalidValue, "Invalid integer value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
+        end
+        resource.send(repo_name)[attr_name] = value
       end,
       float: AttributeConfig.new(:float) do |resource, repo_name, attr_name, value|
-        resource.send(repo_name)[attr_name] = value ? Float(value) : nil
+        begin
+          value ? Float(value) : nil
+        rescue ArgumentError => e
+          raise InvalidValue, "Invalid float value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
+        end
+        resource.send(repo_name)[attr_name] = value
       end,
       decimal: AttributeConfig.new(:decimal) do |resource, repo_name, attr_name, value|
-        resource.send(repo_name)[attr_name] = value ? Integer(value) : nil
+        begin
+          value ? Integer(value) : nil
+        rescue ArgumentError => e
+          raise InvalidValue, "Invalid integer value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
+        end
+        resource.send(repo_name)[attr_name] = value
       end,
       datetime: AttributeConfig.new(:datetime) do |resource, repo_name, attr_name, value|
-        resource.send(repo_name)[attr_name] = value ? Time.zone.parse(value) : nil
+        resource.send(repo_name)[attr_name] = value ? Time.zone.parse(value.to_s) : nil
       end,
       timestamp: AttributeConfig.new(:timestamp) do |resource, repo_name, attr_name, value|
-        resource.send(repo_name)[attr_name] = value ? Time.zone.parse(value) : nil
+        resource.send(repo_name)[attr_name] = value ? Time.zone.parse(value.to_s) : nil
       end,
       time: AttributeConfig.new(:time) do |resource, repo_name, attr_name, value|
-        resource.send(repo_name)[attr_name] = value ? Time.zone.parse(value) : nil
+        resource.send(repo_name)[attr_name] = value ? Time.zone.parse(value.to_s) : nil
       end,
       date: AttributeConfig.new(:date) do |resource, repo_name, attr_name, value|
-        resource.send(repo_name)[attr_name] = value ? Date.parse(value) : nil
+        begin
+          value ? Date.parse(value) : nil
+        rescue Date::Error, TypeError => e
+          raise InvalidValue, "Invalid date value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
+        end
+        resource.send(repo_name)[attr_name] = value
       end,
       binary: AttributeConfig.new(:binary),
       boolean: AttributeConfig.new(:boolean),
