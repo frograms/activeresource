@@ -219,6 +219,7 @@ module ActiveResource::Associations
       end
     else
       define_method(method_name) do |options = nil|
+        lazy = options&.delete(:lazy)
         if instance_variable_defined?(ivar_name)
           instance_variable_get(ivar_name)
         elsif attributes.include?(method_name)
@@ -250,7 +251,11 @@ module ActiveResource::Associations
               if ActiveResource.api_type_name_object_map.object_map.key?(reflection.class_name)
                 options[:params][:__type__] = reflection.class_name # association class_name is api_type_name
               end
-              instance_variable_set(ivar_name, klass.find(:all, **options))
+              if lazy
+                klass.where(options[:params])
+              else
+                instance_variable_set(ivar_name, klass.find(:all, **options))
+              end
             end
           elsif reflection.options[:getter]
             instance_variable_set(ivar_name, self.send(reflection.options[:getter]))
