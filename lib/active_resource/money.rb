@@ -9,7 +9,11 @@ ActiveResource::Schema.set_custom_attribute_type(
 
 class Money
   def resource_json(options = nil)
-    {'cents' => cents, 'currency' => currency.iso_code.to_s}
+    h = {'cents' => cents, 'currency' => currency.iso_code.to_s}
+    if options && options[:format]
+      h['format'] = options[:format].is_a?(Array) ? format(*options[:format]) : format
+    end
+    h
   end
 end
 
