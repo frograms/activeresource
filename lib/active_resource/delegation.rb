@@ -5,7 +5,7 @@ module ActiveResource
 
     attr_reader :_cache
 
-    delegate :each, :each_with_index, :[], :size, :map, to: :to_a
+    delegate :each, :each_with_index, :[], :map, to: :to_a
 
     def initialize(resource, *args, **options)
       @resource = resource
@@ -103,6 +103,14 @@ module ActiveResource
     def count
       return _cache[:count] if _cache[:count]
       _cache[:count] = @resource.find(:count, build_options)
+    end
+
+    def size
+      if _cache[:all]
+        _cache[:all].length
+      else
+        count
+      end
     end
 
     def exists?
