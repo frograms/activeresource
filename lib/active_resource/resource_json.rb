@@ -5,9 +5,12 @@ module ActiveResource
     mattr_accessor :methods_prefix, default: '_r_'.freeze
     mattr_accessor :rescue_method, default: (
       proc do |obj, mtd, original_method, exception|
-        if defined?(Rails)
-          ResourceJson.default_rescue_method(obj, mtd, original_method, exception)
-        end
+        ResourceJson.default_rescue_method(obj, mtd, original_method, exception)
+      end
+    )
+    mattr_accessor :logging_exception, default: (
+      proc do |obj, mtd, original_method, exception|
+        ResourceJson.default_logging_exception(obj, mtd, original_method, exception)
       end
     )
 
@@ -25,6 +28,13 @@ module ActiveResource
         msg += "\nexception: #{exception.message}\n#{exception.backtrace.join("\n")}"
         ActiveResource::Base.logger.error(msg)
         ret
+      end
+
+      def default_logging_exception(obj, method_name, original_method, exception)
+        msg = "resource_json #{obj.class.name}##{original_method} raise exception: [#{exception.class.name}] #{exception.message}"
+        msg += "\n#{exception.backtrace.join("\n")}"
+        ActiveResource::Base.logger.error(msg)
+        msg
       end
     end
 
@@ -103,12 +113,15 @@ module ActiveResource
           prefixed = :"#{resource_methods_prefix}#{mtd}"
           begin
             hash[m_name.to_s] = send(prefixed)
-          rescue => e
+          rescue NoMethodError => e
             if respond_to?(m_name)
               ::ActiveResource::Current.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
             else
               raise NoMethodError, "undefined method `#{m_name}' for #{self.class.name}"
             end
+          rescue => e
+            message = ResourceJson.logging_exception.call(self, m_name, mtd, e)
+            hash[m_name.to_s] = message
           end
         when Array
           if mtd[0].present?
@@ -118,12 +131,15 @@ module ActiveResource
             opts = mtd_args.extract_options!
             begin
               hash[m_name.to_s] = send(prefixed, *mtd_args, **opts)
-            rescue => e
+            rescue NoMethodError => e
               if respond_to?(m_name)
                 ::ActiveResource::Current.warnings << ResourceJson.rescue_method.call(self, m_name, mtd, e)
               else
                 raise NoMethodError, "undefined method `#{m_name}' for #{self.class.name}"
               end
+            rescue => e
+              message = ResourceJson.logging_exception.call(self, m_name, mtd, e)
+              hash[m_name.to_s] = message
             end
           end
         end

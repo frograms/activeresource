@@ -13,7 +13,7 @@ module ActiveResource # :nodoc:
       text: AttributeConfig.new(:text),
       integer: AttributeConfig.new(:integer) do |resource, repo_name, attr_name, value|
         begin
-          value ? Integer(value) : nil
+          value = value ? Integer(value) : nil
         rescue ArgumentError => e
           raise InvalidValue, "Invalid integer value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
         end
@@ -21,7 +21,7 @@ module ActiveResource # :nodoc:
       end,
       float: AttributeConfig.new(:float) do |resource, repo_name, attr_name, value|
         begin
-          value ? Float(value) : nil
+          value = value ? Float(value) : nil
         rescue ArgumentError => e
           raise InvalidValue, "Invalid float value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
         end
@@ -29,7 +29,7 @@ module ActiveResource # :nodoc:
       end,
       decimal: AttributeConfig.new(:decimal) do |resource, repo_name, attr_name, value|
         begin
-          value ? Integer(value) : nil
+          value = value ? Integer(value) : nil
         rescue ArgumentError => e
           raise InvalidValue, "Invalid integer value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
         end
@@ -46,7 +46,7 @@ module ActiveResource # :nodoc:
       end,
       date: AttributeConfig.new(:date) do |resource, repo_name, attr_name, value|
         begin
-          value ? Date.parse(value) : nil
+          value = value ? Date.parse(value) : nil
         rescue Date::Error, TypeError => e
           raise InvalidValue, "Invalid date value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
         end
