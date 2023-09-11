@@ -8,33 +8,13 @@ module ActiveResource
         ResourceJson.default_rescue_method(obj, mtd, original_method, exception)
       end
     )
-    mattr_accessor :logging_exception, default: (
-      proc do |obj, mtd, original_method, exception|
-        ResourceJson.default_logging_exception(obj, mtd, original_method, exception)
-      end
-    )
 
     class << self
       def default_rescue_method(obj, method_name, original_method, exception)
         ret = {type: exception.class.name, message: exception.message}
-        if exception.is_a?(NoMethodError) && exception =~ /#{method_name}/ && obj.respond_to?(method_name)
-          msg = "resource_json `method: #{method_name}` rejected. if you want allow, alias as `#{obj.resource_methods_prefix}#{method_name}` in `class: #{obj.class.name}`"
-          ActiveResource::Base.logger.info(msg)
-          return ret.merge(message: msg)
-        end
-        msg = "resource_json rescue `method: #{original_method.inspect}` for `class: #{obj.class.name}`"
-        msg += ", `id: #{obj.id}`" if obj.respond_to?(:id)
-        ret = ret.merge(message: msg, original_message: exception.message, backtrace: exception.backtrace.join("\n"))
-        msg += "\nexception: #{exception.message}\n#{exception.backtrace.join("\n")}"
-        ActiveResource::Base.logger.error(msg)
-        ret
-      end
-
-      def default_logging_exception(obj, method_name, original_method, exception)
-        msg = "resource_json #{obj.class.name}##{original_method} raise exception: [#{exception.class.name}] #{exception.message}"
-        msg += "\n#{exception.backtrace.join("\n")}"
-        ActiveResource::Base.logger.error(msg)
-        msg
+        msg = "resource_json `method: #{method_name}` rejected. if you want allow, alias as `#{obj.resource_methods_prefix}#{method_name}` in `class: #{obj.class.name}`"
+        ActiveResource::Base.logger.info(msg)
+        ret.merge(message: msg)
       end
     end
 
@@ -119,9 +99,6 @@ module ActiveResource
             else
               raise NoMethodError, "undefined method `#{m_name}' for #{self.class.name}"
             end
-          rescue => e
-            message = ResourceJson.logging_exception.call(self, m_name, mtd, e)
-            hash[m_name.to_s] = message
           end
         when Array
           if mtd[0].present?
@@ -137,9 +114,6 @@ module ActiveResource
               else
                 raise NoMethodError, "undefined method `#{m_name}' for #{self.class.name}"
               end
-            rescue => e
-              message = ResourceJson.logging_exception.call(self, m_name, mtd, e)
-              hash[m_name.to_s] = message
             end
           end
         end

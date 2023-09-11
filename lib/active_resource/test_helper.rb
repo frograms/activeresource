@@ -77,7 +77,11 @@ module ActiveResource
 
       def grab_request(&block)
         @grab_request ||= []
-        @grab_request << block
+        if block_given?
+          @grab_request << block
+        else
+          @grab_request
+        end
       end
 
       def release_request
