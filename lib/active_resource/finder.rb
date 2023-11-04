@@ -83,6 +83,14 @@ module ActiveResource
             end
           end
         end
+
+        # include's extra
+        Array.wrap(params[:__includes__]).each do |inc|
+          inc_schema = reflections[inc].klass(resource: self).schema
+          inc_ext_configs = inc_schema.extra.select { |_, v| v.options.dig(:extra, :default_request) }.values
+          exts << { inc => inc_ext_configs.map(&:server_name) } if inc_ext_configs.present?
+        end
+
         params[:__extra__] = exts.compact.uniq
         params
       end
