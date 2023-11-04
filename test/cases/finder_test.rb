@@ -15,6 +15,10 @@ require "active_resource/finder"
 
 class FinderTest < ActiveSupport::TestCase
   def setup
+    Object.send(:remove_const, :Person)
+    Object.send(:remove_const, :Project)
+    load("fixtures/person.rb")
+    load("fixtures/project.rb")
     setup_response # find me in abstract_unit
   end
 

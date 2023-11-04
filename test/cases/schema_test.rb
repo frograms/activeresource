@@ -110,5 +110,7 @@ class SchemaTest < ActiveSupport::TestCase
     assert !p.extra.key?('due')
     p.load_extra
     assert_equal p.due, Time.parse('2023-02-23 02:40:00 +0000')
+  ensure
+    Person.reflections = {}.with_indifferent_access
   end
 end
