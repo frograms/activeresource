@@ -258,8 +258,11 @@ class FinderTest < ActiveSupport::TestCase
       datetime :due, extra: {default_request: false}
     end
 
-    params = { id: 2, includes: [:projects] }.with_indifferent_access
-    builded = Person.build_params!(params)
-    assert_equal builded, { id: 2, __includes__: [:projects], __extra__: [:email, { projects: [:desc] }] }.with_indifferent_access
+    params = Person.build_params!({ id: 2, includes: [:projects] }.with_indifferent_access) # Person.find(2)
+    assert_equal params, { id: 2, __includes__: [:projects], __extra__: [:email, { projects: [:desc] }] }.with_indifferent_access
+  ensure # restore schema
+    Person.schema = {}
+    Person.reflections = {}.with_indifferent_access
+    Project.schema = {}
   end
 end
