@@ -2,6 +2,7 @@
 
 require "abstract_unit"
 require "fixtures/person"
+require "fixtures/project"
 require "fixtures/post"
 require "fixtures/customer"
 require "fixtures/street_address"
@@ -231,17 +232,34 @@ class FinderTest < ActiveSupport::TestCase
   end
 
   def test_merge_options
-    option_a = {a: 1, b: 2, extra: [:brother, {uncle: [:brother, :sister]}], includes: [:uncle], order_by: :id}
+    option_a = {a: 1, b: 2, extra: [:brother], includes: [:uncle], order_by: :id}
     option_b = {a: 3, d: 4, extra: [:sister], order_by: {created_at: :desc}}
     option_c = {c: 5, d: 6, includes: :aunt, order_by: [:updated_at]}
     merged = ActiveResource::Finder.merge_options(option_a, option_b, option_c)
     assert_equal merged, {
       a: 3, b: 2, c: 5, d: 6,
-      params: {extra: [:brother, { uncle: [:brother, :sister] }, :sister], includes: [:uncle, :aunt], order_by: {id: :asc, created_at: :desc, updated_at: :asc}}
+      params: {extra: [:brother, :sister], includes: [:uncle, :aunt], order_by: {id: :asc, created_at: :desc, updated_at: :asc}}
     }.with_indifferent_access
     merged = ActiveResource::Finder.merge_options(option_a)
-    assert_equal merged, {a: 1, b: 2, params: {extra: [:brother, { uncle: [:brother, :sister] }], includes: [:uncle], order_by: {id: :asc}}}.with_indifferent_access
+    assert_equal merged, {a: 1, b: 2, params: {extra: [:brother], includes: [:uncle], order_by: {id: :asc}}}.with_indifferent_access
     merged = ActiveResource::Finder.merge_options(merged, option_b)
-    assert_equal merged, {a: 3, b: 2, d: 4, params: {extra: [:brother, { uncle: [:brother, :sister] }, :sister], includes: [:uncle], order_by: {id: :asc, created_at: :desc}}}.with_indifferent_access
+    assert_equal merged, {a: 3, b: 2, d: 4, params: {extra: [:brother, :sister], includes: [:uncle], order_by: {id: :asc, created_at: :desc}}}.with_indifferent_access
+  end
+
+  def test_build_params
+    Person.schema do
+      string :name
+      string :email, extra: true
+      string :gender, extra: {default_request: false}
+    end
+    Person.has_many :projects
+    Project.schema do
+      string :desc, extra: true
+      datetime :due, extra: {default_request: false}
+    end
+
+    params = { id: 2, includes: [:projects] }.with_indifferent_access
+    builded = Person.build_params!(params)
+    assert_equal builded, { id: 2, __includes__: [:projects], __extra__: [:email, { projects: [:desc] }] }.with_indifferent_access
   end
 end
