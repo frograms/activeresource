@@ -151,7 +151,7 @@ def setup_response
     mock.head   "/people/1/addresses/2.json",   {}, nil, 404
     mock.head   "/people/2/addresses/1.json",    {}, nil, 404
     mock.head   "/people/Greg/addresses/1.json", {}, nil, 200
-    mock.get    "/people.json?__includes__%5B%5D=projects&id=2", {}, @people_david_with_projects
+    mock.get    "/people.json?__extra__%5B%5D%5Bprojects%5D%5B%5D=desc&__includes__%5B%5D=projects&id=2", {}, @people_david_with_projects
     # customer
     mock.get    "/customers/1.json",             {}, @luis
     # sound
