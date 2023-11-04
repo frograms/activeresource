@@ -92,4 +92,23 @@ class SchemaTest < ActiveSupport::TestCase
     p.load_extra
     assert_equal p.due, Time.parse('2023-02-23 02:40:00 +0000')
   end
+
+  def test_include_association_extra
+    Person.has_many :projects
+    Project.schema do
+      string :desc, extra: true
+      datetime :due, extra: {default_request: false}
+    end
+
+    person = Person.where(id: 2).includes(:projects).first
+    assert_kind_of Person, person
+    assert_equal person.attributes.keys, %w[id name projects]
+    assert_kind_of Project, person.attributes['projects'].first # preloaded
+
+    p = person.projects.first
+    assert_equal p.extra.keys, %w[desc]
+    assert !p.extra.key?('due')
+    p.load_extra
+    assert_equal p.due, Time.parse('2023-02-23 02:40:00 +0000')
+  end
 end

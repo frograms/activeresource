@@ -45,6 +45,7 @@ def setup_response
   @project_h = {id: 11, email: "nuke@manhattan.proj", name: "Manhattan", desc: "make a nuke"}
   @project = @project_h.to_json
   @project_due = @project_h.merge(due: Time.at(1677120000)).to_json
+  @people_david_with_projects = [{ person: { id: 2, name: "David", projects: [@project_h] } }].to_json
 
   # - deep nested resource -
   # - Luis (Customer)
@@ -150,6 +151,7 @@ def setup_response
     mock.head   "/people/1/addresses/2.json",   {}, nil, 404
     mock.head   "/people/2/addresses/1.json",    {}, nil, 404
     mock.head   "/people/Greg/addresses/1.json", {}, nil, 200
+    mock.get    "/people.json?__includes__%5B%5D=projects&id=2", {}, @people_david_with_projects
     # customer
     mock.get    "/customers/1.json",             {}, @luis
     # sound
