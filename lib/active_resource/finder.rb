@@ -86,7 +86,12 @@ module ActiveResource
 
         # include's extra
         Array.wrap(params[:__includes__]).each do |inc|
-          inc_schema = reflections[inc].klass(resource: self).schema
+          inc_schema =
+            case inc
+            when Symbol, String then reflections[inc].klass.schema
+            when Hash then reflections[inc.keys.first].klass.schema # TODO: support nested includes
+            else nil
+            end
           inc_ext_configs = inc_schema.extra.select { |_, v| v.options.dig(:extra, :default_request) }.values
           exts << { inc => inc_ext_configs.map(&:server_name) } if inc_ext_configs.present?
         end
