@@ -41,10 +41,14 @@ module ActiveResource
     class << self
       def set(api_type_name, object)
         if object_map.key?(api_type_name)
-          raise Duplicated, "#{api_type_name} already mapped on #{object}"
+          unless object_map[api_type_name].instance_variable_get(:@__armap_default__)
+            raise Duplicated, "#{api_type_name} already mapped on #{object}"
+          end
         end
         if !object.nil? && api_type_name_map.key?(object)
-          raise Duplicated, "#{object} already mapped on #{api_type_name}"
+          unless api_type_name_map[object].instance_variable_get(:@__armap_default__)
+            raise Duplicated, "#{object} already mapped on #{api_type_name}"
+          end
         end
         object_map._set_(api_type_name, object)
         api_type_name_map._set_(object, api_type_name.to_s)
@@ -53,6 +57,16 @@ module ActiveResource
       def multi_set(hash)
         hash.each_pair do |api_type_name, object|
           set(api_type_name, object)
+        end
+      end
+
+      def default_multi_set(hash)
+        hash.each_pair do |api_type_name, object|
+          atn = api_type_name.dup
+          atn.instance_variable_set(:@__armap_default__, true)
+          obj = object.dup
+          obj.instance_variable_set(:@__armap_default__, true)
+          set(atn, obj)
         end
       end
 

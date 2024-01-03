@@ -130,12 +130,12 @@ module ActiveResource
         ActiveResource::TestHelper.send(:remove_const, :TestClientMap) rescue nil
         mod = ActiveResource::ApiTypeNameObjectMap.dup
         ActiveResource::TestHelper.const_set(:TestClientMap, mod)
-        object_map = {}.with_indifferent_access
+        object_map = mod.object_map.dup
         object_map.instance_eval do
           alias _set_ []=
         end
         mod.define_singleton_method(:object_map) { object_map }
-        api_type_name_map = {}
+        api_type_name_map = mod.api_type_name_map.dup
         api_type_name_map.instance_eval do
           alias _set_ []=
         end
