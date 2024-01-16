@@ -29,7 +29,9 @@ module ActiveResource
 
       def allow_resource_json(*mtds)
         mtds.each do |mtd|
-          alias_method resource_method_name(mtd), mtd
+          define_method(resource_method_name(mtd)) do
+            send(mtd)
+          end
         end
       end
 
