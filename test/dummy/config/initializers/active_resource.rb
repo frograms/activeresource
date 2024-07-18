@@ -1,5 +1,6 @@
 Rails.application.configure do
   config.after_initialize do
+    require 'fixtures/musician'
     ActiveResource::ApiTypeNameObjectMap.multi_set(
       'Musician' => 'Client::Musician',
       )
@@ -9,5 +10,6 @@ Rails.application.configure do
       else object.class.name
       end
     end
+    Musician = Client::Musician
   end
 end

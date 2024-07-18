@@ -3,11 +3,15 @@ module ActiveResource
     class << self
     end
 
-    attr_reader :_cache
+    attr_reader :_condition, :_cache, :options
+    attr_accessor :limit_value # ActiveRecord::QueryMethods
+    attr_accessor :klass, :args, :kwargs
 
-    delegate :each, :each_with_index, :[], :map, to: :to_a
+    delegate :each, :each_with_index, :[], :map, :size, to: :to_a
 
     def initialize(resource, *args, **options)
+      @klass = klass
+      @args = args
       @resource = resource
       @options = options
       @options[:params] ||= {}
@@ -19,6 +23,8 @@ module ActiveResource
         api_type_name = ActiveResource.api_type_name_object_map.api_type_name_of(object)
         @options[:params][:__type__] = api_type_name
       end
+      @_condition = (options[:_condition] || {}).with_indifferent_access
+      @_associations = (options[:_associations] || [])
       @_cache = {}
     end
 
@@ -57,13 +63,93 @@ module ActiveResource
       self
     end
 
+    # active record
+    def merge!(arg)
+      if arg.is_a?(self.class)
+        @options[:params] = (@options[:params] || {}).merge(arg.options)
+      end
+      self
+    end
+
+    # active record
+    def reset_scope
+      self
+    end
+
+    # Association#skip_statement_cache?
+    def eager_loading?
+      false
+    end
+
+    # active record
+    def take
+      first
+    end
+
+    # active_record/calculations
+    def pluck(*column_names)
+      to_a.map do |obj|
+        column_names.one? ? obj.send(column_names.first) : column_names.map{|name| obj.send(name)}
+      end
+    end
+
+    # active record
+    def first_or_initialize
+      return to_a.first if to_a.present?
+      klass.new(_condition)
+    end
+
+    def _association
+      args[0]
+    end
+
+    # sample
+    # #<ActiveRecord::Reflection::HasManyReflection:0x00007fcd6b78a628
+    #   @name=:content_action_counts, @scope=nil, @options={:as=>:contentable},
+    #   @active_record=Book(id: integer, created_at: datetime, updated_at: datetime),
+    #   @klass=ContentActionCount, @plural_name="content_action_counts", @constructable=true,
+    #   @type="contentable_type", @class_name="ContentActionCount", @inverse_name=nil>
+    def _reflection
+      _association&.reflection
+    end
+
+    def _reflection_as
+      @_reflection_as ||= _reflection&.options&.dig(:as)
+    end
+
+    def _owner
+      _association&.owner
+    end
+
     def build_options(opts = {})
-      merged = Finder.merge_options(@options, opts)
-      params = merged.delete(:params).with_indifferent_access
+      _opts = Finder.merge_options(@options, opts)
+      params = _opts.delete(:params).with_indifferent_access
       @resource.build_belongs_to_params!(params)
       @resource.build_has_many_params!(params)
-      merged[:params] = params
-      merged
+      _opts[:params] = params
+
+      if _reflection_as && _owner
+        as_id = _reflection.options[:foreign_key] || "#{_reflection_as}_id"
+        as_type = _reflection.options[:foreign_type] || "#{_reflection_as}_type"
+        _opts.merge!({ as_id => _owner.id, as_type => _owner.class.base_class.name })
+      elsif _reflection && _owner
+        case _reflection
+        when ActiveRecord::Reflection::BelongsToReflection
+          if _reflection.polymorphic?
+            id = _owner.send(_reflection.foreign_key)
+            type = _owner.send(_reflection.foreign_type)
+            _opts[:params].merge!({'type' => type, 'id' => id})
+          else
+            id = _owner.send(_reflection.foreign_key)
+            type = _reflection.foreign_type
+            _opts[:params].merge!({'type' => type, 'id' => id})
+          end
+        when ActiveRecord::Reflection::HasManyReflection
+          _opts.merge!({ "#{_owner.class.base_class.model_name.singular}_id" => _owner.id.to_i })
+        else raise "undefined reflection: #{_reflection.class}"
+        end
+      end
+      _opts
     end
 
     def all(*args)
@@ -120,6 +206,11 @@ module ActiveResource
 
     def blank?
       !exists?
+    end
+
+    # File activerecord/lib/active_record/relation.rb, line 644
+    def reset
+      self
     end
   end
 end
