@@ -41,7 +41,7 @@ module ActiveResource
       end
 
       def request(method, path, headers: {}, body: nil)
-        if (grab = @grab_request.shift)
+        if (grab = (@grab_request || []).shift)
           result = ActiveSupport::Notifications.instrument("request.#{client_name}") do |payload|
             payload[:method]      = method
             payload[:request_uri] = "#{site.scheme}://#{site.host}:#{site.port}#{path}"
@@ -67,6 +67,7 @@ module ActiveResource
           @last_result = {request: [method, path, headers: headers, body: body], response: result}
           handle_response(result, request_args: [method, path, headers: headers, body: body])
         else
+          puts "No grab_request block for #{method} #{path}\n\tHEADER: #{headers.inspect}\n\tBODY: #{body}"
           super
         end
       rescue Timeout::Error => e
