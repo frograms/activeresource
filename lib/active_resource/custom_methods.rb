@@ -56,27 +56,32 @@ module ActiveResource
         #
         #   Person.find(:all, :from => :active)
         def get(custom_method_name, options = {})
-          hashified = format.decode(connection.get(custom_method_collection_url(custom_method_name, options), headers).body)
+          h = headers.merge(options.delete(:_headers) || {})
+          hashified = format.decode(connection.get(custom_method_collection_url(custom_method_name, options), h).body)
           derooted  = Formats.remove_root(hashified)
           derooted.is_a?(Array) ? derooted.map { |e| Formats.remove_root(e) } : derooted
         end
 
         def post(custom_method_name, options = {}, body = "")
-          connection.post(custom_method_collection_url(custom_method_name, options), body, headers)
+          h = headers.merge(options.delete(:_headers) || {})
+          connection.post(custom_method_collection_url(custom_method_name, options), body, h)
         end
 
         def patch(custom_method_name, options = {}, body = "")
-          connection.patch(custom_method_collection_url(custom_method_name, options), body, headers)
+          h = headers.merge(options.delete(:_headers) || {})
+          connection.patch(custom_method_collection_url(custom_method_name, options), body, h)
         end
 
         def put(custom_method_name, options = {}, body = "")
-          connection.put(custom_method_collection_url(custom_method_name, options), body, headers)
+          h = headers.merge(options.delete(:_headers) || {})
+          connection.put(custom_method_collection_url(custom_method_name, options), body, h)
         end
 
         def delete(custom_method_name, options = {})
           # Need to jump through some hoops to retain the original class 'delete' method
           if custom_method_name.is_a?(Symbol)
-            connection.delete(custom_method_collection_url(custom_method_name, options), headers)
+            h = headers.merge(options.delete(:_headers) || {})
+            connection.delete(custom_method_collection_url(custom_method_name, options), h)
           else
             orig_delete(custom_method_name, options)
           end
@@ -92,28 +97,33 @@ module ActiveResource
     end
 
     def get(method_name, options = {})
-      self.class.format.decode(connection.get(custom_method_element_url(method_name, options), self.class.headers).body)
+      h = self.class.headers.merge(try(:_headers, options) || {})
+      self.class.format.decode(connection.get(custom_method_element_url(method_name, options), h).body)
     end
 
     def post(method_name, options = {}, body = nil)
       request_body = body.blank? ? encode : body
+      h = self.class.headers.merge(try(:_headers, options) || options.delete(:_headers) || {})
       if new?
-        connection.post(custom_method_new_element_url(method_name, options), request_body, self.class.headers)
+        connection.post(custom_method_new_element_url(method_name, options), request_body, h)
       else
-        connection.post(custom_method_element_url(method_name, options), request_body, self.class.headers)
+        connection.post(custom_method_element_url(method_name, options), request_body, h)
       end
     end
 
     def patch(method_name, options = {}, body = "")
-      connection.patch(custom_method_element_url(method_name, options), body, self.class.headers)
+      h = self.class.headers.merge(try(:_headers, options) || options.delete(:_headers) || {})
+      connection.patch(custom_method_element_url(method_name, options), body, h)
     end
 
     def put(method_name, options = {}, body = "")
-      connection.put(custom_method_element_url(method_name, options), body, self.class.headers)
+      h = self.class.headers.merge(try(:_headers, options) || options.delete(:_headers) || {})
+      connection.put(custom_method_element_url(method_name, options), body, h)
     end
 
     def delete(method_name, options = {})
-      connection.delete(custom_method_element_url(method_name, options), self.class.headers)
+      h = self.class.headers.merge(try(:_headers, options) || options.delete(:_headers) || {})
+      connection.delete(custom_method_element_url(method_name, options), h)
     end
 
 
