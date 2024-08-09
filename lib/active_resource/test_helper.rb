@@ -67,8 +67,7 @@ module ActiveResource
           @last_result = {request: [method, path, headers: headers, body: body], response: result}
           handle_response(result, request_args: [method, path, headers: headers, body: body])
         else
-          puts "No grab_request block for #{method} #{path}\n\tHEADER: #{headers.inspect}\n\tBODY: #{body}"
-          super
+          raise "No grab_request block for #{method} #{path}\n\tHEADER: #{headers.inspect}\n\tBODY: #{body}"
         end
       rescue Timeout::Error => e
         raise TimeoutError.new(e.message)
