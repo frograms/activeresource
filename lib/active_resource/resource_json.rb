@@ -62,7 +62,7 @@ module ActiveResource
 
       hash = resource_hash(options).resource_json(options)
       if root
-        root = model_name.element if root == true
+        root = self.class.try(:element_name) || model_name.element if root == true
         { root => hash }
       else
         hash

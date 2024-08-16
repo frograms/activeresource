@@ -1535,10 +1535,10 @@ module ActiveResource
     # serialization format specified in ActiveResource::Base.format. The options
     # applicable depend on the configured encoding format.
     def encode(options = {})
-      case self.class.format.extension
-      when 'json' then resource_json(options).to_json(options)
-      else send("to_#{self.class.format.extension}", options)
+      if self.class.format.extension == 'json' && respond_to?(:resource_json)
+        return resource_json(options).to_json(options)
       end
+      send("to_#{self.class.format.extension}", options)
     end
 
     # A method to \reload the attributes of this object from the remote web service.
