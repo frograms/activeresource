@@ -54,6 +54,7 @@ module ActiveResource
     end
 
     def resource_json(options = nil)
+      options = options&.dup || {}
       root = if options && options.key?(:root)
         options[:root]
       else
@@ -70,7 +71,7 @@ module ActiveResource
     end
 
     def resource_hash(options = nil)
-      options ||= {}
+      options = options&.dup || {}
       methods = options.delete(:methods) || []
       includes = options.delete(:include) || []
       hash = serializable_hash(options)
@@ -125,7 +126,8 @@ module ActiveResource
     end
 
     private
-    def resource_json_add_includes(options = {}) # :nodoc:
+    def resource_json_add_includes(options = nil) # :nodoc:
+      options = options&.dup || {}
       return unless (includes = options[:include])
 
       unless includes.is_a?(Hash)
@@ -246,7 +248,7 @@ end
 
 class Array
   def resource_json(options = nil) # :nodoc:
-    options ||= {}
+    options = options&.dup || {}
     super_vs = options.delete(:__super_values__) || []
     subset = reject{|v| !v.resource_primitive? && super_vs.include?(v) }
     super_vs += subset.select{|v| !v.resource_primitive? }.uniq
@@ -257,6 +259,8 @@ end
 
 class Hash
   def resource_json(options = nil) # :nodoc:
+    options = options&.dup || {}
+
     # create a subset of the hash by applying :only or :except
     subset = if options
       if (attrs = options[:only])
@@ -270,7 +274,6 @@ class Hash
       self
     end
 
-    options ||= {}
     super_vs = options.delete(:__super_values__) || []
     subset = subset.reject{|k, v| !v.resource_primitive? && super_vs.include?(v) }
     super_vs += subset.values.select{|v| !v.resource_primitive? }.uniq
