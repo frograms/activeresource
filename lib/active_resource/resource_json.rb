@@ -90,6 +90,7 @@ module ActiveResource
 
       methods.each do |mtd|
         case mtd
+        when :__type__, '__type__' then self.class.name
         when Symbol, String
           m_name = mtd
           prefixed = :"#{resource_methods_prefix}#{mtd}"
