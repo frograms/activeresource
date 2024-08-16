@@ -41,7 +41,10 @@ module ActiveResource
       end
 
       def request(method, path, headers: {}, body: nil)
-        if (grab = (@grab_request || []).shift)
+        grab = (@grab_request || []).shift
+        if grab == :super
+          super
+        elsif grab.is_a?(Proc)
           result = ActiveSupport::Notifications.instrument("request.#{client_name}") do |payload|
             payload[:method]      = method
             payload[:request_uri] = "#{site.scheme}://#{site.host}:#{site.port}#{path}"
@@ -82,6 +85,11 @@ module ActiveResource
         else
           @grab_request
         end
+      end
+
+      def grab_request_original
+        @grab_request ||= []
+        @grab_request << :super
       end
 
       def release_request

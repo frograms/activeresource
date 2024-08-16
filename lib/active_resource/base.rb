@@ -409,6 +409,11 @@ module ActiveResource
         _schema
       end
 
+      def inheritance_column = 'type'
+      def _has_attribute?(name)
+        (schema.attrs.keys + ['extra']).include?(name)
+      end
+
       # Alternative, direct way to specify a <tt>schema</tt> for this
       # Resource. <tt>schema</tt> is more flexible, but this is quick
       # for a very simple schema.
@@ -1419,7 +1424,7 @@ module ActiveResource
     #   # => true
     #
     def ==(other)
-      other.equal?(self) || (other.instance_of?(self.class) && other.id == id && other.prefix_options == prefix_options)
+      other.equal?(self) || (other.instance_of?(self.class) && !id.nil? && other.id == id && other.prefix_options == prefix_options) || super
     end
 
     # Tests for equality (delegates to ==).

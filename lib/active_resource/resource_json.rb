@@ -60,7 +60,7 @@ module ActiveResource
         include_root_in_json
       end
 
-      hash = resource_hash(options).resource_json
+      hash = resource_hash(options).resource_json(options)
       if root
         root = model_name.element if root == true
         { root => hash }
@@ -150,6 +150,18 @@ ActiveSupport.on_load(:active_record) do
   end
 end
 
+ActiveSupport.on_load(:active_resource) do
+  include ActiveResource::ResourceJson
+
+  def resource_hash(options = nil)
+    if extra.present?
+      attributes.merge('extra' => extra)
+    else
+      attributes.dup
+    end
+  end
+end
+
 class Module
   alias resource_json as_json
 end
@@ -162,6 +174,7 @@ class Object
       instance_values.resource_json(options)
     end
   end
+  def resource_primitive? = false
 end
 
 class Struct # :nodoc:
@@ -172,38 +185,47 @@ end
 
 class TrueClass
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class FalseClass
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class NilClass
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class String
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class Symbol
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class Numeric
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class Float
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class BigDecimal
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class Regexp
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 module Enumerable
@@ -218,11 +240,17 @@ end
 
 class Range
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class Array
   def resource_json(options = nil) # :nodoc:
-    map { |v| options ? v.resource_json(options.dup) : v.resource_json }
+    options ||= {}
+    super_vs = options.delete(:__super_values__) || []
+    subset = reject{|v| !v.resource_primitive? && super_vs.include?(v) }
+    super_vs += subset.select{|v| !v.resource_primitive? }.uniq
+    options[:__super_values__] = super_vs
+    subset.map { |v| v.resource_json(options) }
   end
 end
 
@@ -241,9 +269,15 @@ class Hash
       self
     end
 
+    options ||= {}
+    super_vs = options.delete(:__super_values__) || []
+    subset = subset.reject{|k, v| !v.resource_primitive? && super_vs.include?(v) }
+    super_vs += subset.values.select{|v| !v.resource_primitive? }.uniq
+    options[:__super_values__] = super_vs
+
     result = {}
     subset.each do |k, v|
-      result[k.to_s] = options ? v.resource_json(options.dup) : v.resource_json
+      result[k.to_s] = v.resource_json(options)
     end
     result
   end
@@ -251,30 +285,37 @@ end
 
 class Time
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class Date
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class DateTime
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class URI::Generic # :nodoc:
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class Pathname # :nodoc:
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class IPAddr # :nodoc:
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class Process::Status # :nodoc:
   alias resource_json as_json
+  def resource_primitive? = true
 end
 
 class Exception
@@ -283,4 +324,5 @@ end
 
 class ActiveSupport::TimeWithZone
   alias resource_json as_json
+  def resource_primitive? = true
 end
