@@ -10,7 +10,7 @@ class CustomMethodsTest < ActiveSupport::TestCase
     @matz = { person: { id: 1, name: "Matz" } }.to_json
     @matz_deep  = { person: { id: 1, name: "Matz", other: "other" } }.to_json
     @matz_array = { people: [{ person: { id: 1, name: "Matz" } }] }.to_json
-    @ryan  = { person: { name: "Ryan" } }.to_json
+    @ryan  = { person: { name: "Ryan", extra: {}, __type__: 'Person' } }.to_json
     @addy  = { address: { id: 1, street: "12345 Street" } }.to_json
     @addy_deep = { address: { id: 1, street: "12345 Street", zip: "27519" } }.to_json
 

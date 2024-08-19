@@ -17,8 +17,13 @@ require "mocha/minitest"
 require 'test_helper'
 
 ActiveSupport::TestCase.test_order = :random if ActiveSupport::TestCase.respond_to?(:test_order=)
-ActiveResource::Base.logger = ActiveSupport::Logger.new("#{File.dirname(__FILE__)}/debug.log")
 ActiveResource::Base.include_root_in_json = true
+
+class ActiveSupport::TestCase
+  setup do
+    ActiveResource::Base.logger = ActiveSupport::Logger.new("#{File.dirname(__FILE__)}/debug.log")
+  end
+end
 
 # require "minitest/reporters"
 # Minitest::Reporters.use! [Minitest::Reporters::SpecReporter.new(location: true)]

@@ -46,6 +46,7 @@ end
 
 class CallbacksTest < ActiveSupport::TestCase
   def setup
+    binding.pry if ActiveResource::Base.logger.nil?
     @developer_attrs = { id: 1, name: "Guillermo", salary: 100_000 }
     @developer = { "developer" => @developer_attrs }.to_json
     ActiveResource::HttpMock.respond_to do |mock|

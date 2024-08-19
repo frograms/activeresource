@@ -91,7 +91,6 @@ module ActiveResource
 
       methods.each do |mtd|
         case mtd
-        when :__type__, '__type__' then self.class.name
         when Symbol, String
           m_name = mtd
           prefixed = :"#{resource_methods_prefix}#{mtd}"
@@ -156,12 +155,8 @@ end
 ActiveSupport.on_load(:active_resource) do
   include ActiveResource::ResourceJson
 
-  def resource_hash(options = nil)
-    if extra.present?
-      attributes.merge('extra' => extra)
-    else
-      attributes.dup
-    end
+  def attribute_names_for_serialization
+    super + %w[extra __type__]
   end
 end
 
@@ -275,7 +270,7 @@ class Hash
     end
 
     super_vs = options.delete(:__super_values__) || []
-    subset = subset.reject{|k, v| !v.resource_primitive? && super_vs.include?(v) }
+    subset = subset.reject{|k, v| !v.resource_primitive? && super_vs.any?{|x| x.equal?(v) } }
     super_vs += subset.values.select{|v| !v.resource_primitive? }.uniq
     options[:__super_values__] = super_vs
 

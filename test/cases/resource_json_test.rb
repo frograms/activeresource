@@ -69,7 +69,7 @@ class ResourceJsonTest < ActiveSupport::TestCase
     o = ResourceBase.new
     o.name = "John"
     o.age = 30
-    assert_equal({ "name" => "John", "age" => 30 }, o.resource_json(root: false))
+    assert_equal({ "name" => "John", "age" => 30, "extra"=>{}, "__type__"=>"ResourceBase" }, o.resource_json(root: false))
   end
 
   def test_resource_base_with_child
@@ -80,7 +80,8 @@ class ResourceJsonTest < ActiveSupport::TestCase
     son.name = "Tom"
     son.age = 10
     o.child = son
-    assert_equal({ "name" => "John", "age" => 30, "child" => { "name" => "Tom", "age" => 10 } }, o.resource_json(root: false))
+    assert_equal({ "name" => "John", "age" => 30, "extra"=>{}, "__type__"=>"ResourceBase", "child" => {
+      "name" => "Tom", "age" => 10, "extra"=>{}, "__type__"=>"ResourceBase" } }, o.resource_json(root: false))
   end
 
   def test_resource_base_with_recursive
@@ -97,10 +98,10 @@ class ResourceJsonTest < ActiveSupport::TestCase
     grand_son.child = o
     son.child = grand_son
     assert_equal(
-      { "name" => "John", "age" => 30, "child" => {
-        "name" => "Tom", "age" => 10, "child" => {
-          "name" => "Jerry", "age" => 5, "child" => {
-            "name" => "John", "age" => 30
+      { "name" => "John", "age" => 30, "extra"=>{}, "__type__"=>"ResourceBase", "child" => {
+        "name" => "Tom", "age" => 10, "extra"=>{}, "__type__"=>"ResourceBase", "child" => {
+          "name" => "Jerry", "age" => 5, "extra"=>{}, "__type__"=>"ResourceBase", "child" => {
+            "name" => "John", "age" => 30, "__type__"=>"ResourceBase"
           }}}}, o.resource_json(root: false))
   end
 
@@ -118,10 +119,10 @@ class ResourceJsonTest < ActiveSupport::TestCase
     grand_son.child = [o]
     son.child = [grand_son]
     assert_equal(
-      { "name" => "John", "age" => 30, "child" => [{
-        "name" => "Tom", "age" => 10, "child" => [{
-          "name" => "Jerry", "age" => 5, "child" => [{
-            "name" => "John", "age" => 30
+      { "name" => "John", "age" => 30, "extra"=>{}, "__type__"=>"ResourceBase", "child" => [{
+        "name" => "Tom", "age" => 10, "extra"=>{}, "__type__"=>"ResourceBase", "child" => [{
+          "name" => "Jerry", "age" => 5, "extra"=>{}, "__type__"=>"ResourceBase", "child" => [{
+            "name" => "John", "age" => 30, "__type__"=>"ResourceBase"
           }]}]}]}, o.resource_json(root: false))
   end
 end
