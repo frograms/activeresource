@@ -31,6 +31,6 @@ group :test do
   gem 'pry-byebug'
   gem 'pry-stack_explorer'
   gem 'mocha'
-  gem 'rails'
+  gem 'rails', '7.0.8.4'
   gem 'mysql2'
 end
