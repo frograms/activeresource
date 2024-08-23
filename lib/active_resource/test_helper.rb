@@ -120,11 +120,13 @@ module ActiveResource
           elsif method == :post
             headers['CONTENT_TYPE'] = 'application/json'
             send(method, path, params: params.to_json, headers: headers)
+            response
           else
             send(method, path, params: params, headers: headers)
+            response
           end
           ActiveResource.define_singleton_method(:api_type_name_object_map) { TestHelper::TestClientMap }
-          response
+          result
         end
       end
 
