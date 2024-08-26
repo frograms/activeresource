@@ -1233,7 +1233,10 @@ module ActiveResource
 
         # Builds the query string for the request.
         def query_string(options)
-          options[:__sparams__] = options.to_resource_serialized_param(exclude: %w[__type__ __invoke__]) if options.respond_to?(:to_resource_serialized_param)
+          if options.respond_to?(:to_resource_serialized_param)
+            opts = options.except(*%i[__type__ __invoke__])
+            options[:__sparams__] = opts.to_resource_serialized_param if opts.present?
+          end
           q = options&.to_query
           q.present? ? "?#{q}" : nil
         end
