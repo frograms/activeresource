@@ -259,7 +259,7 @@ module ActiveResource
             req = OpenStruct.new
             yield(req)
             request = ActiveResource::Request.new(:#{method}, path, #{has_body ? 'req.body, ' : 'nil, '}req.headers)
-            request.headers.delete('expect_result_type') 
+            request.headers.delete('Expect-Result-Type') 
             request.headers.delete('User-Agent')
             self.class.requests << request
             if response = self.class.responses.assoc(request)
