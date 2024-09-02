@@ -16,6 +16,8 @@ ActiveSupport.on_load(:active_record) do
       if converted.eql?(value)
         if value.respond_to?(:_read_attribute)
           value._read_attribute(primary_key(value))
+        else
+          value
         end
       end
     end
