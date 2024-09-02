@@ -13,12 +13,14 @@ ActiveSupport.on_load(:active_record) do
     alias_method :__convert_to_id, :convert_to_id
     def convert_to_id(value)
       converted = __convert_to_id(value)
-      if converted.eql?(value)
+      if converted && converted.eql?(value)
         if value.respond_to?(:_read_attribute)
           value._read_attribute(primary_key(value))
         else
           value
         end
+      else
+        converted
       end
     end
   end
