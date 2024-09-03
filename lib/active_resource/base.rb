@@ -1142,20 +1142,36 @@ module ActiveResource
           prefix_options, query_options = split_options(params)
           query_options.delete(:__extra__) if query_options[:__extra__].blank?
           hs = headers.merge('Expect-Result-Type' => 'collection')
+          force_post = options.delete(:__post__)
 
-          response =
-            case from = options[:from]
-            when Symbol
-              get(from, params)
-            when String
-              path = "#{from}#{query_string(query_options)}"
-              res = connection.get(path, hs)
-              format.decode(res.body)
-            else
-              path = collection_path(prefix_options, query_options)
-              res = connection.get(path, hs)
-              format.decode(res.body)
-            end
+          if force_post
+            q_params = query_params(query_options)
+            response =
+              case from = options[:from]
+              when Symbol
+                post(from, options.merge(_headers: hs), q_params.to_json)
+              when String
+                res = connection.post(from, q_params.to_json, hs)
+                format.decode(res.body)
+              else
+                res = connection.post(collection_path, q_params.to_json, hs)
+                format.decode(res.body)
+              end
+          else
+            response =
+              case from = options[:from]
+              when Symbol
+                get(from, params)
+              when String
+                path = "#{from}#{query_string(query_options)}"
+                res = connection.get(path, hs)
+                format.decode(res.body)
+              else
+                path = collection_path(prefix_options, query_options)
+                res = connection.get(path, hs)
+                format.decode(res.body)
+              end
+          end
 
           if query_options[:__invoke__]
             response['result']
@@ -1231,12 +1247,17 @@ module ActiveResource
           @prefix_parameters ||= prefix_source.scan(/:\w+/).map { |key| key[1..-1].to_sym }.to_set
         end
 
-        # Builds the query string for the request.
-        def query_string(options)
+        def query_params(options)
           if options.respond_to?(:to_resource_serialized_param)
             opts = options.except(*%i[__type__ __invoke__])
             options[:__sparams__] = opts.to_resource_serialized_param if opts.present?
           end
+          options
+        end
+
+        # Builds the query string for the request.
+        def query_string(options)
+          options = query_params(options)
           q = options&.to_query
           q.present? ? "?#{q}" : nil
         end

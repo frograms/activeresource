@@ -212,5 +212,10 @@ module ActiveResource
     def reset
       self
     end
+
+    def force_post
+      options[:__post__] = true
+      self
+    end
   end
 end
