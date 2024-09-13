@@ -1257,7 +1257,6 @@ module ActiveResource
 
         # Builds the query string for the request.
         def query_string(options)
-          options = query_params(options)
           q = options&.to_query
           q.present? ? "?#{q}" : nil
         end
