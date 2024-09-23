@@ -23,18 +23,17 @@ module ActiveResource
     mattr_reader :_object_fallback, default: proc { |api_type_name| api_type_name.constantize }
     mattr_reader :_api_type_name_fallback, default: proc { |object_name| object_name }
 
-    object_map.instance_eval do
-      alias _set_ []=
-      def []=(*, **)
-        raise NoMethodError, 'use ApiTypeNameObjectMap.set'
+    def self.makeup_map_hash(hash)
+      hash.instance_eval do
+        alias _set_ []=
+        def []=(*, **)
+          raise NoMethodError, 'use ApiTypeNameObjectMap.set'
+        end
       end
     end
-    api_type_name_map.instance_eval do
-      alias _set_ []=
-      def []=(*, **)
-        raise NoMethodError, 'use ApiTypeNameObjectMap.set'
-      end
-    end
+
+    makeup_map_hash(object_map)
+    makeup_map_hash(api_type_name_map)
 
     class Duplicated < ActiveResource::Error; end
 

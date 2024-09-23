@@ -1,4 +1,34 @@
 module ActiveResource
+  module ApiTypeNameObjectMap
+    class << self
+      def reset
+        @@object_map = {}.with_indifferent_access
+        makeup_map_hash(@@object_map)
+        @@api_type_name_map = {}.with_indifferent_access
+        makeup_map_hash(@@api_type_name_map)
+        @@_object_fallback = proc { |api_type_name| api_type_name.constantize }
+        @@_api_type_name_fallback = proc { |object_name| object_name }
+      end
+
+      def backup
+        {
+          object_map: object_map.dup,
+          api_type_name_map: api_type_name_map.dup,
+          _object_fallback: _object_fallback,
+          _api_type_name_fallback: _api_type_name_fallback,
+        }
+      end
+
+      def restore(hash)
+        return unless hash
+        @@object_map = hash[:object_map]
+        @@api_type_name_map = hash[:api_type_name_map]
+        @@_object_fallback = hash[:_object_fallback]
+        @@_api_type_name_fallback = hash[:_api_type_name_fallback]
+      end
+    end
+  end
+
   module TestHelper
     mattr_accessor :client_object_map
 
@@ -158,6 +188,48 @@ module ActiveResource
         yield(mod) if block_given?
         ActiveResource.define_singleton_method(:api_type_name_object_map) { ApiTypeNameObjectMap }
         ActiveResource::TestHelper.send(:remove_const, :TestClientMap) rescue nil
+      end
+    end
+
+    module NewMethods
+      def resource_capture_controller(connection, api_type_name_object_map: nil)
+        api_type_name_object_map = SERVER_API_TYPE_NAME_OBJECT_MAP if api_type_name_object_map.nil? && defined?(SERVER_API_TYPE_NAME_OBJECT_MAP)
+        backup_map = ActiveResource.api_type_name_object_map.backup
+        connection.grab_request do |method, path ,params, headers, payload|
+          request.headers.merge(payload[:request_headers])
+          ActiveResource.api_type_name_object_map.reset
+          ActiveResource.api_type_name_object_map.restore(api_type_name_object_map)
+          result = yield(method, params, payload)
+          ActiveResource.api_type_name_object_map.restore(backup_map)
+          result
+        end
+      end
+
+      def resource_capture_request(connection, api_type_name_object_map: nil)
+        api_type_name_object_map = SERVER_API_TYPE_NAME_OBJECT_MAP if api_type_name_object_map.nil? && defined?(SERVER_API_TYPE_NAME_OBJECT_MAP)
+        backup_map = ActiveResource.api_type_name_object_map.backup
+        connection.grab_request do |method, path, params, headers, payload|
+          ActiveResource.api_type_name_object_map.reset
+          ActiveResource.api_type_name_object_map.restore(api_type_name_object_map)
+          result = if block_given?
+            yield(method, path, params, headers, payload)
+          elsif method == :post
+            headers['CONTENT_TYPE'] = 'application/json'
+            send(method, path, params: params.to_json, headers: headers)
+            response
+          else
+            send(method, path, params: params, headers: headers)
+            response
+          end
+          ActiveResource.api_type_name_object_map.restore(backup_map)
+          result
+        end
+      end
+
+      def resource_capture_model(connection)
+        connection.grab_request do |method, path, params, headers, payload|
+          yield(method, path, params, headers, payload)
+        end
       end
     end
   end
