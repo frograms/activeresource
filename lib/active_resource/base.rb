@@ -409,7 +409,7 @@ module ActiveResource
         _schema
       end
 
-      def inheritance_column = 'type'
+      def inheritance_column; 'type' end
       def _has_attribute?(name)
         (schema.attrs.keys + ['extra']).include?(name)
       end
@@ -1347,6 +1347,10 @@ module ActiveResource
       end
       attrs.delete(:__type__)
       load(attrs, **options)
+    end
+
+    def to_record
+      ActiveResource.to_record(self)
     end
 
     # Returns a \clone of the resource that hasn't been assigned an +id+ yet and

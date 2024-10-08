@@ -15,6 +15,17 @@ module ActiveResource
     def map_api_type_name(object)
       api_type_name_object_map.find_api_type_name(object)
     end
+
+    def to_record(resource)
+      record_name = map_api_type_name(resource)
+      record_name&.constantize&.find_by(id: resource.id)
+    end
+
+    def to_resource(obj)
+      object = map_object(obj.class.base_class.name)
+      object&.new(**obj.attributes)
+    end
+    alias_method :[], :to_resource
   end
 
   module ApiTypeNameObjectMap
