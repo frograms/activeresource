@@ -4,7 +4,7 @@ module ActiveResource
 
     class_methods do
       def polymorphic_name
-        ApiTypeNameObjectMap.find_api_type_name(self)
+        RecordMap.record_base_name(self)
       end
     end
   end

@@ -185,8 +185,10 @@ module ActiveResource
         api_type_name_fallback = proc { |object| (object.is_a?(String) ? object.constantize : object).base_class.name }
         mod.define_singleton_method(:_api_type_name_fallback) { api_type_name_fallback }
         ActiveResource.define_singleton_method(:api_type_name_object_map) { mod }
+        ActiveResource.define_singleton_method(:record_map) { mod }
         yield(mod) if block_given?
         ActiveResource.define_singleton_method(:api_type_name_object_map) { ApiTypeNameObjectMap }
+        ActiveResource.define_singleton_method(:record_map) { ActiveResource::RecordMap }
         ActiveResource::TestHelper.send(:remove_const, :TestClientMap) rescue nil
       end
     end
@@ -194,23 +196,23 @@ module ActiveResource
     module NewMethods
       def resource_capture_controller(connection, api_type_name_object_map: nil)
         api_type_name_object_map = SERVER_API_TYPE_NAME_OBJECT_MAP if api_type_name_object_map.nil? && defined?(SERVER_API_TYPE_NAME_OBJECT_MAP)
-        backup_map = ActiveResource.api_type_name_object_map.backup
+        backup_map = ActiveResource.record_map.backup
         connection.grab_request do |method, path ,params, headers, payload|
           request.headers.merge(payload[:request_headers])
-          ActiveResource.api_type_name_object_map.reset
-          ActiveResource.api_type_name_object_map.restore(api_type_name_object_map)
+          ActiveResource.record_map.reset
+          ActiveResource.record_map.restore(api_type_name_object_map)
           result = yield(method, params, payload)
-          ActiveResource.api_type_name_object_map.restore(backup_map)
+          ActiveResource.record_map.restore(backup_map)
           result
         end
       end
 
       def resource_capture_request(connection, api_type_name_object_map: nil)
         api_type_name_object_map = SERVER_API_TYPE_NAME_OBJECT_MAP if api_type_name_object_map.nil? && defined?(SERVER_API_TYPE_NAME_OBJECT_MAP)
-        backup_map = ActiveResource.api_type_name_object_map.backup
+        backup_map = ActiveResource.record_map.backup
         connection.grab_request do |method, path, params, headers, payload|
-          ActiveResource.api_type_name_object_map.reset
-          ActiveResource.api_type_name_object_map.restore(api_type_name_object_map)
+          ActiveResource.record_map.reset
+          ActiveResource.record_map.restore(api_type_name_object_map)
           result = if block_given?
             yield(method, path, params, headers, payload)
           elsif method == :post
@@ -221,7 +223,7 @@ module ActiveResource
             send(method, path, params: params, headers: headers)
             response
           end
-          ActiveResource.api_type_name_object_map.restore(backup_map)
+          ActiveResource.record_map.restore(backup_map)
           result
         end
       end

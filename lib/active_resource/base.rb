@@ -1222,7 +1222,7 @@ module ActiveResource
           api_type_name = extract_api_type_name(record)
           klass = self
           if api_type_name
-            if (obj = ActiveResource.api_type_name_object_map.find_object_namespace_fallback(api_type_name)) && self != obj
+            if (obj = ActiveResource.record_map.resource_class_namespace_fallback(api_type_name)) && self != obj
               klass = obj if obj < ActiveResource::Base
             end
           end
@@ -1791,7 +1791,7 @@ module ActiveResource
     end
 
     def __type__
-      ActiveResource.api_type_name_object_map.api_type_name_of(self.class)
+      ActiveResource.record_map.record_base_name(self.class)
     end
 
     protected
@@ -1881,7 +1881,7 @@ module ActiveResource
       def find_or_create_resource_for(name, value: nil)
         if value.is_a?(Hash) && value['__type__'].present?
           resource_name = value['__type__']
-          object = ActiveResource.api_type_name_object_map.find_object_namespace_fallback(resource_name)
+          object = ActiveResource.record_map.resource_class_namespace_fallback(resource_name)
           return object if object
         end
 
@@ -1891,7 +1891,7 @@ module ActiveResource
           resource_name = name.to_s.camelize
         end
 
-        object = ActiveResource.api_type_name_object_map.find_object_namespace_fallback(resource_name)
+        object = ActiveResource.record_map.resource_class_namespace_fallback(resource_name)
         return object if object
 
         const_args = [resource_name, false]
@@ -1968,7 +1968,7 @@ module ActiveResource
     include ActiveModel::AttributeMethods
     public :_read_attribute
     include ActiveResource::Inheritance
-    include ActiveResource::ApiTypeName
+    include ActiveResource::RecordMap::ResourceHelper
   end
 
   ActiveSupport.run_load_hooks(:active_resource, Base)

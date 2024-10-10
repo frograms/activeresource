@@ -137,7 +137,7 @@ module ActiveResource::Associations
       elsif (association_id = send(reflection.foreign_key))
         if reflection.options[:polymorphic]
           api_type_name = send(reflection.foreign_type)
-          kl = ActiveResource.api_type_name_object_map.find_object(api_type_name)
+          kl = ActiveResource.record_map.resource_class(api_type_name)
           kl ||= reflection.klass(resource: self)
           instance_variable_set(ivar_name, kl.find_by(kl.primary_key => association_id))
         else
@@ -154,7 +154,7 @@ module ActiveResource::Associations
     if reflection.options[:polymorphic]
       define_method("#{method_name}=") do |obj|
         attributes[reflection.foreign_key] = obj&.id
-        attributes[reflection.foreign_type] = obj ? ActiveResource.api_type_name_object_map.find_api_type_name(obj) : nil
+        attributes[reflection.foreign_type] = obj ? ActiveResource.record_map.record_base_name(obj) : nil
         instance_variable_set(ivar_name, obj)
       end
     else
@@ -172,10 +172,10 @@ module ActiveResource::Associations
         if assoc.options[:polymorphic]
           value = Array.wrap(value)
           if value.map{|v| v.class.base_class.name}.uniq.one?
-            params[assoc.foreign_type] = ActiveResource.api_type_name_object_map.find_api_type_name(value.first)
+            params[assoc.foreign_type] = ActiveResource.record_map.record_base_name(value.first)
             params[assoc.foreign_key] = value.map{|v| v.send(v.class.primary_key)}
           else
-            params[name] = value.map{|v| {type: ActiveResource.api_type_name_object_map.find_api_type_name(v), id: v.send(v.class.primary_key)}}
+            params[name] = value.map{|v| {type: ActiveResource.record_map.record_base_name(v), id: v.send(v.class.primary_key)}}
           end
         else
           val = Array.wrap(value).map{|v| v.send(v.class.primary_key)}
@@ -248,7 +248,7 @@ module ActiveResource::Associations
                 instance_variable_set(ivar_name, col)
               end
             else
-              if ActiveResource.api_type_name_object_map.object_map.key?(reflection.class_name)
+              if ActiveResource.record_map.object_map.key?(reflection.class_name)
                 options[:params][:__type__] = reflection.class_name # association class_name is api_type_name
               end
               if lazy

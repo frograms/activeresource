@@ -20,7 +20,7 @@ module ActiveResource
       @options[:order_by] ||= {}.with_indifferent_access
       object = resource.is_a?(Class) ? resource : resource.class
       if object.superclass != ActiveResource::Base
-        api_type_name = ActiveResource.api_type_name_object_map.api_type_name_of(object)
+        api_type_name = ActiveResource.record_map.record_name(object)
         @options[:params][:__type__] = api_type_name
       end
       @_condition = (options[:_condition] || {}).with_indifferent_access

@@ -59,7 +59,7 @@ module ActiveResource
       # <tt>has_many :clients</tt> returns the Client class
       def klass(resource: nil)
         c_name = class_name(resource: resource)
-        @klass = ActiveResource.api_type_name_object_map.find_object(c_name)
+        @klass = ActiveResource.record_map.resource_class(c_name)
         @klass ||= c_name.constantize
       end
 
