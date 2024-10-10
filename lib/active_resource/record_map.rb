@@ -24,18 +24,20 @@ module ActiveResource
     end
 
     def to_record(resource)
+      return resource if resource.is_a?(ActiveRecord::Base) || (resource.is_a?(Class) && resource < ActiveRecord::Base)
       record_base_name = record_map.record_base_name(resource)
-      if resource.is_a?(ActiveResource)
+      if resource.is_a?(ActiveResource::Base)
         record_base_name&.constantize&.find_by(id: resource.id)
       else
         record_base_name
       end
     end
 
-    def to_resource(obj)
-      resource_class = record_map.resource_class(obj)
-      if obj.is_a?(ActiveRecord)
-        resource_class&.new(**obj.attributes)
+    def to_resource(record)
+      return record if record.is_a?(ActiveResource::Base) || (record.is_a?(Class) && record < ActiveResource::Base)
+      resource_class = record_map.resource_class(record)
+      if record.is_a?(ActiveRecord::Base)
+        resource_class&.new(**record.attributes)
       else
         resource_class
       end
