@@ -137,7 +137,8 @@ module ActiveResource::Associations
       elsif (association_id = send(reflection.foreign_key))
         if reflection.options[:polymorphic]
           api_type_name = send(reflection.foreign_type)
-          kl = ActiveResource.record_map.resource_class(api_type_name)
+          kl = api_type_name.constantize rescue nil
+          kl ||= ActiveResource.record_map.resource_class(api_type_name)
           kl ||= reflection.klass(resource: self)
           instance_variable_set(ivar_name, kl.find_by(kl.primary_key => association_id))
         else
