@@ -121,6 +121,8 @@ module ActiveResource
           end
         end
       end
+
+      resource_hash_after(hash) if respond_to?(:resource_hash_after)
       hash
     end
 
