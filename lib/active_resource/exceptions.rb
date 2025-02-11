@@ -106,42 +106,53 @@ module ActiveResource
 
   # 400 Bad Request
   class BadRequest < ClientError # :nodoc:
+    def self.http_status = Rack::Utils::SYMBOL_TO_STATUS_CODE[:bad_request]
   end
 
   # 401 Unauthorized
   class UnauthorizedAccess < ClientError # :nodoc:
+    def self.http_status = Rack::Utils::SYMBOL_TO_STATUS_CODE[:unauthorized]
   end
 
   # 403 Forbidden
   class ForbiddenAccess < ClientError # :nodoc:
+    def self.http_status = Rack::Utils::SYMBOL_TO_STATUS_CODE[:forbidden]
   end
 
   # 404 Not Found
   class ResourceNotFound < ClientError # :nodoc:
+    def self.http_status = Rack::Utils::SYMBOL_TO_STATUS_CODE[:not_found]
   end
 
   # 409 Conflict
   class ResourceConflict < ClientError # :nodoc:
+    def self.http_status = Rack::Utils::SYMBOL_TO_STATUS_CODE[:conflict]
   end
 
   # 410 Gone
   class ResourceGone < ClientError # :nodoc:
+    def self.http_status = Rack::Utils::SYMBOL_TO_STATUS_CODE[:gone]
   end
 
   # 412 Precondition Failed
   class PreconditionFailed < ClientError # :nodoc:
+    def self.http_status = Rack::Utils::SYMBOL_TO_STATUS_CODE[:precondition_failed]
   end
 
   # 429 Too Many Requests
   class TooManyRequests < ClientError # :nodoc:
+    def self.http_status = Rack::Utils::SYMBOL_TO_STATUS_CODE[:too_many_requests]
   end
 
   # 5xx Server Error
   class ServerError < ConnectionError # :nodoc:
+    def self.http_status = Rack::Utils::SYMBOL_TO_STATUS_CODE[:internal_server_error]
   end
 
   # 405 Method Not Allowed
   class MethodNotAllowed < ClientError # :nodoc:
+    def self.http_status = Rack::Utils::SYMBOL_TO_STATUS_CODE[:method_not_allowed]
+
     def allowed_methods
       @response["Allow"].split(",").map { |verb| verb.strip.downcase.to_sym }
     end
