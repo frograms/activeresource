@@ -5,7 +5,7 @@ module ActiveResource
 
   class << self
     def api_type_name_object_map
-      Rails.deprecator.warn("api_type_name_object_map is deprecated. Use record_map instead.")
+      ActiveSupport.deprecator.warn("api_type_name_object_map is deprecated. Use record_map instead.")
       record_map
     end
 
@@ -14,12 +14,12 @@ module ActiveResource
     end
 
     def map_object(api_type_name)
-      Rails.deprecator.warn("map_object is deprecated. Use record_map.resource_class instead.")
+      ActiveSupport.deprecator.warn("map_object is deprecated. Use record_map.resource_class instead.")
       record_map.resource_class(api_type_name)
     end
 
     def map_api_type_name(object)
-      Rails.deprecator.warn("map_api_type_name is deprecated. Use record_map.record_base_name instead.")
+      ActiveSupport.deprecator.warn("map_api_type_name is deprecated. Use record_map.record_base_name instead.")
       record_map.record_base_name(object)
     end
 
@@ -120,7 +120,7 @@ module ActiveResource
       end
 
       def find_object(api_type_name)
-        Rails.deprecator.warn("find_object is deprecated. Use resource_class(record) instead.")
+        ActiveSupport.deprecator.warn("find_object is deprecated. Use resource_class(record) instead.")
         resource_class(api_type_name)
       end
 
@@ -137,7 +137,7 @@ module ActiveResource
       end
 
       def find_object_namespace_fallback(api_type_name)
-        Rails.deprecator.warn("find_object is deprecated. Use resource_class_namespace_fallback instead.")
+        ActiveSupport.deprecator.warn("find_object is deprecated. Use resource_class_namespace_fallback instead.")
         resource_class_namespace_fallback(api_type_name)
       end
 
@@ -156,7 +156,7 @@ module ActiveResource
       end
 
       def find_object!(api_type_name)
-        Rails.deprecator.warn("find_object! is deprecated. Use resource_class!(record) instead.")
+        ActiveSupport.deprecator.warn("find_object! is deprecated. Use resource_class!(record) instead.")
         resource_class!(api_type_name)
       end
 
@@ -172,12 +172,12 @@ module ActiveResource
       end
 
       def object_fallback(&block)
-        Rails.deprecator.warn("object_fallback is deprecated. Use _object_fallback instead.")
+        ActiveSupport.deprecator.warn("object_fallback is deprecated. Use _object_fallback instead.")
         @@object_fallback = block
       end
 
       def find_api_type_name(object)
-        Rails.deprecator.warn("find_api_type_name is deprecated. Use find_record_base_name(record) instead.")
+        ActiveSupport.deprecator.warn("find_api_type_name is deprecated. Use find_record_base_name(record) instead.")
         record_base_name(object)
       end
 
@@ -191,12 +191,12 @@ module ActiveResource
       end
 
       def api_type_name_fallback(&block)
-        Rails.deprecator.warn("api_type_name_fallback is deprecated. Use _api_type_name_fallback instead.")
+        ActiveSupport.deprecator.warn("api_type_name_fallback is deprecated. Use _api_type_name_fallback instead.")
         @@api_type_name_fallback = block
       end
 
       def api_type_name_of(object)
-        Rails.deprecator.warn("api_type_name_of is deprecated. Use record_name(record) instead.")
+        ActiveSupport.deprecator.warn("api_type_name_of is deprecated. Use record_name(record) instead.")
         record_name(object)
       end
 
@@ -217,7 +217,7 @@ module ActiveResource
 
       class_methods do
         def api_type_name
-          Rails.deprecator.warn("api_type_name is deprecated. use record_base_name")
+          ActiveSupport.deprecator.warn("api_type_name is deprecated. use record_base_name")
           record_base_name
         end
 
@@ -248,7 +248,7 @@ module ActiveResource
 
       class_methods do
         def api_type_name
-          Rails.deprecator.warn("api_type_name is deprecated. Use record_base_name")
+          ActiveSupport.deprecator.warn("api_type_name is deprecated. Use record_base_name")
           record_base_name
         end
 
@@ -262,7 +262,7 @@ module ActiveResource
       end
 
       def api_type_name
-        Rails.deprecator.warn("api_type_name is deprecated. Use record_base_name")
+        ActiveSupport.deprecator.warn("api_type_name is deprecated. Use record_base_name")
         record_base_name
       end
 
