@@ -5,7 +5,6 @@ require "fixtures/person"
 
 class BaseErrorsTest < ActiveSupport::TestCase
   def setup
-    binding.pry if ActiveResource::Base.logger.nil?
     ActiveResource::HttpMock.respond_to do |mock|
       mock.post "/people.xml", {}, %q(<?xml version="1.0" encoding="UTF-8"?><errors><error>Age can't be blank</error><error>Known attribute can't be blank</error><error>Name can't be blank</error><error>Name must start with a letter</error><error>Person quota full for today.</error><error>Phone work can't be blank</error><error>Phone is not valid</error></errors>), 422, "Content-Type" => "application/xml; charset=utf-8"
       mock.post "/people.json", {}, %q({"errors":{"age":["can't be blank"],"known_attribute":["can't be blank"],"name":["can't be blank", "must start with a letter"],"person":["quota full for today."],"phone_work":["can't be blank"],"phone":["is not valid"]}}), 422, "Content-Type" => "application/json; charset=utf-8"
