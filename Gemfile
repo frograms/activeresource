@@ -30,7 +30,6 @@ group :test do
   gem 'pry'
   gem 'pry-byebug'
   gem 'pry-stack_explorer'
-  gem 'mocha'
   gem 'rails', "~> 8.0"
   gem 'mysql2'
 end
