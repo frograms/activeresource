@@ -706,12 +706,18 @@ module ActiveResource
         merged
       end
 
+      # NOTE: Rails 8.0부터 class_attribute 구현이 바뀌게 됨 (e.g. self.element_name = 'foo' 는 __class_attr_element_name 이라는 private method에 저장됨)
+      # 따라서 기존 메소드를 aliasing 하여 이 값이 있을 경우 그 값을 early return 하여 처리한다.
+      # 참고로 8.0 미만 버전에서는 self.element_name = 'foo' 로 설정했을 경우 아래 메소드가 무시되고 class_attribute에서 meta programming 된 메소드로 처리된다.
+      alias_method :orig_element_name, :element_name
       def element_name
+        return orig_element_name if orig_element_name.present?
         @element_name ||= model_name.element
       end
 
-
+      alias_method :orig_collection_name, :collection_name
       def collection_name
+        return orig_collection_name if orig_collection_name.present?
         @collection_name ||= ActiveSupport::Inflector.pluralize(element_name)
       end
 
