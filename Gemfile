@@ -31,5 +31,5 @@ group :test do
   gem 'pry-byebug'
   gem 'pry-stack_explorer'
   gem 'rails', "~> 8.0"
-  gem 'mysql2'
+  gem 'trilogy'
 end

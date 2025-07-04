@@ -254,21 +254,19 @@ module ActiveResource
         #     raise InvalidRequestError.new("Could not find a response recorded for #{request.to_s} - Responses recorded are: - #{inspect_responses}")
         #   end
         # end
-        module_eval <<-EOE, __FILE__, __LINE__ + 1
-          def #{method}(path)
+          define_method(method) do |path, &block|
             req = OpenStruct.new
-            yield(req)
-            request = ActiveResource::Request.new(:#{method}, path, #{has_body ? 'req.body, ' : 'nil, '}req.headers)
+            block.call(req)
+            request = ActiveResource::Request.new(method.to_sym, path, has_body ? req.body : nil, req.headers)
             request.headers.delete('Expect-Result-Type') 
             request.headers.delete('User-Agent')
             self.class.requests << request
-            if response = self.class.responses.assoc(request)
+            if (response = self.class.responses.assoc(request))
               response[1]
             else
-              raise InvalidRequestError.new("Could not find a response recorded for \#{request.to_s} - Responses recorded are: \#{inspect_responses}")
+              raise InvalidRequestError.new("Could not find a response recorded for #{request.to_s} - Responses recorded are: #{inspect_responses}")
             end
           end
-        EOE
       end
     end
 

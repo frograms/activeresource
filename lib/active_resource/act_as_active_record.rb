@@ -61,6 +61,14 @@ module ActiveResource
       def limit!(value)
         self
       end
+
+      def has_query_constraints?
+        false
+      end
+
+      def composite_primary_key?
+        false
+      end
     end
 
     def strict_loading?
