@@ -27,8 +27,8 @@ platform :mri do
 end
 
 group :test do
+  gem 'debug'
   gem 'pry'
-  gem 'pry-byebug'
   gem 'pry-stack_explorer'
   gem 'rails', "~> 8.0"
   gem 'trilogy'
