@@ -24,6 +24,9 @@ module ActiveResource
         uri = URI.parse(@request[:path])
         @request[:format] = uri.path.scan(/.*\.(json|xml)$/).flatten[0]
       end
+      if defined?(Sentry)
+        Sentry.set_tags(active_resource: 'Connection')
+      end
       if @response && decoder && @response.body.present?
         begin
           @response_body = decoder.decode_as_it_is(@response.body)
