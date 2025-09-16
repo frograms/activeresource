@@ -25,11 +25,20 @@ module ActiveResource
         @request[:format] = uri.path.scan(/.*\.(json|xml)$/).flatten[0]
       end
       if @response && decoder && @response.body.present?
-        @response_body = decoder.decode_as_it_is(@response.body)
-        if @response_body.is_a?(Hash)
-          @response_body = @response_body.with_indifferent_access
-          @message ||= @response_body['message'] if @response_body['message'].present?
-          @message ||= @response_body.dig('error', 'message') if @response_body['error'].is_a?(Hash) && @response_body.dig('error', 'message').present?
+        begin
+          @response_body = decoder.decode_as_it_is(@response.body)
+          if @response_body.is_a?(Hash)
+            @response_body = @response_body.with_indifferent_access
+            @message ||= @response_body['message'] if @response_body['message'].present?
+            @message ||= @response_body.dig('error', 'message') if @response_body['error'].is_a?(Hash) && @response_body.dig('error', 'message').present?
+          end
+        rescue StandardError => e
+          if respond_to?(:attributes)
+            attributes[:response_body] = @response.body.to_s
+            attributes[:response_parse_error] = "#{e.class.name}: #{e.message}"
+          end
+          @response_body = { 'original_body' => @response.body.to_s }
+          @message = "#{e.class.name} #{e.message}"
         end
       end
     end
@@ -65,7 +74,7 @@ module ActiveResource
       @info = []
       @info << "Response code = #{response.code}" if response.respond_to?(:code)
       @info << "Response message = #{response.message}" if response.respond_to?(:message)
-      @info << "Response body message = #{response_body&.dig(:message)}"
+      @info << "Response body message = #{response_body&.dig(:message) || response_body&.dig('original_body')}"
       @info << "Error message = #{@message}"
       @info << "Request method = #{request[:method]}" if request[:method]
       @info << "Request path = #{request[:path]}" if request[:path]

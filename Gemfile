@@ -9,12 +9,6 @@ gem "activesupport"
 gem "activemodel"
 gem "activejob"
 
-gem "rubocop"
-gem "rubocop-minitest"
-gem "rubocop-packaging"
-gem "rubocop-performance"
-gem "rubocop-rails"
-
 gem "minitest-bisect"
 gem "minitest-reporters"
 
