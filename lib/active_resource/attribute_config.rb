@@ -1,6 +1,6 @@
 module ActiveResource
   class AttributeConfig
-    attr_reader :name, :options, :load_proc, :after_collect
+    attr_reader :name, :load_proc
 
     def initialize(name, &block)
       @name = name

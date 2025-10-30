@@ -7,7 +7,7 @@ module ActiveResource
     attr_accessor :limit_value # ActiveRecord::QueryMethods
     attr_accessor :klass, :args, :kwargs
 
-    delegate :each, :each_with_index, :[], :map, :size, to: :to_a
+    delegate :each, :each_with_index, :[], :map, to: :to_a
 
     def initialize(resource, *args, **options)
       @klass = klass

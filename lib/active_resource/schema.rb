@@ -14,7 +14,7 @@ module ActiveResource # :nodoc:
       integer: AttributeConfig.new(:integer) do |resource, repo_name, attr_name, value|
         begin
           value = value ? Integer(value) : nil
-        rescue ArgumentError => e
+        rescue ArgumentError
           raise InvalidValue, "Invalid integer value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
         end
         resource.send(repo_name)[attr_name] = value
@@ -22,7 +22,7 @@ module ActiveResource # :nodoc:
       float: AttributeConfig.new(:float) do |resource, repo_name, attr_name, value|
         begin
           value = value ? Float(value) : nil
-        rescue ArgumentError => e
+        rescue ArgumentError
           raise InvalidValue, "Invalid float value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
         end
         resource.send(repo_name)[attr_name] = value
@@ -30,7 +30,7 @@ module ActiveResource # :nodoc:
       decimal: AttributeConfig.new(:decimal) do |resource, repo_name, attr_name, value|
         begin
           value = value ? Integer(value) : nil
-        rescue ArgumentError => e
+        rescue ArgumentError
           raise InvalidValue, "Invalid integer value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
         end
         resource.send(repo_name)[attr_name] = value
@@ -47,7 +47,7 @@ module ActiveResource # :nodoc:
       date: AttributeConfig.new(:date) do |resource, repo_name, attr_name, value|
         begin
           value = value ? Date.parse(value) : nil
-        rescue Date::Error, TypeError => e
+        rescue Date::Error, TypeError
           raise InvalidValue, "Invalid date value: `model: #{resource.class.name}` `attribute: #{attr_name}` value #{value}"
         end
         resource.send(repo_name)[attr_name] = value

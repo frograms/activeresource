@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support/core_ext/benchmark"
 require "active_support/core_ext/object/inclusion"
 require "net/https"
 require "date"
@@ -48,8 +47,8 @@ module ActiveResource
     def site=(site)
       @site = site.is_a?(URI) ? site : URI.parse(site)
       @ssl_options ||= {} if @site.is_a?(URI::HTTPS)
-      @user = URI::DEFAULT_PARSER.unescape(@site.user) if @site.user
-      @password = URI::DEFAULT_PARSER.unescape(@site.password) if @site.password
+      @user = URI::RFC2396_PARSER.unescape(@site.user) if @site.user
+      @password = URI::RFC2396_PARSER.unescape(@site.password) if @site.password
     end
 
     # Set the proxy for remote service.
