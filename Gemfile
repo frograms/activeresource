@@ -21,10 +21,10 @@ platform :mri do
   end
 end
 
-group :test do
-  gem 'debug'
-  gem 'pry'
-  gem 'pry-stack_explorer'
-  gem 'rails', "~> 8.1"
-  gem 'trilogy'
-end
+gem 'debug'
+gem 'pry'
+gem 'pry-stack_explorer'
+gem 'rails', "~> 8.1"
+gem 'trilogy'
+gem 'ruby-lsp'
+
