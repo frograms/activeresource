@@ -27,5 +27,9 @@ jobs:
         with:
           ruby-version: '3.4'
           bundler-cache: true
+      # 빈 DB 면 rails/test_help 가 bin/rails db:test:prepare 를 별도 프로세스로 띄운다.
+      # 그 프로세스에는 rake 의 -I test 가 없어서 dummy initializer 의 require 'fixtures/...' 가 실패하므로 RUBYLIB 로 넘긴다
       - name: Run tests
+        env:
+          RUBYLIB: ${{ github.workspace }}/test
         run: bundle exec rake test
